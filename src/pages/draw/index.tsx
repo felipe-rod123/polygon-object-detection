@@ -13,6 +13,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { Link } from 'react-router';
+import { Button } from '../../components/ui/button';
 
 export default function Page() {
   return (
@@ -27,6 +29,11 @@ export default function Page() {
               <BreadcrumbItem className="hidden md:block">
                 <BreadcrumbLink href="#">
                   Building Your Application
+                </BreadcrumbLink>
+                <BreadcrumbLink>
+                  <Button>
+                    <Link to="/">Go to Home</Link>
+                  </Button>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />

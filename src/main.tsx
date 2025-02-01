@@ -1,13 +1,22 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./index.css";
+import { StrictMode } from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Route, Routes } from 'react-router';
 
-const rootElement = document.getElementById("root") as HTMLElement;
-const root = createRoot(rootElement);
+import Draw from './pages/draw';
+import Home from './pages/home';
 
-root.render(
+const root = document.getElementById('root') as HTMLElement;
+
+/* StrictMode is used in debuging, to add more infos to React (all hooks perform one extra time, to check cleanup)
+ */
+
+ReactDOM.createRoot(root).render(
   <StrictMode>
-    <App />
-  </StrictMode>
+    <BrowserRouter>
+      <Routes>
+        <Route index element={<Home />} />
+        <Route path="draw" element={<Draw />} />
+      </Routes>
+    </BrowserRouter>
+  </StrictMode>,
 );
