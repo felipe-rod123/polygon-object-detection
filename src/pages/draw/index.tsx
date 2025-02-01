@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import {
+  Box,
   Brush,
   Download,
   Eraser,
@@ -27,14 +28,30 @@ import {
   Square,
 } from 'lucide-react';
 import type React from 'react';
+import { useState } from 'react';
 import ThemeSwitchButton from '../../components/theme-switch-button';
+import BackAlertDialog from './BackAlertDialog';
 
 const DrawPage: React.FC = () => {
+  const [brushSize, setBrushSize] = useState(10);
+
+  const handleBrushSizeChange = (value: number[]) => {
+    setBrushSize(value[0]);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
       <header className="border-b border-zinc-200 p-4 flex justify-between items-center dark:border-zinc-800">
-        <h1 className="text-2xl font-bold">Polygon Draw</h1>
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-row justify-center items-center text-2xl font-bold text-zinc-800 dark:text-zinc-100">
+          <Box
+            className="mr-0.5 text-main-700 dark:text-main-300"
+            strokeWidth={3}
+          />
+          polygon
+        </div>
+        <div className="flex items-center space-x-2">
+          <BackAlertDialog />
+
           <ThemeSwitchButton />
           {/* MOBILE RESPONSIVE SIDEBAR LAYOUT */}
           <Sheet>
@@ -53,7 +70,9 @@ const DrawPage: React.FC = () => {
                   Adjust your drawing settings here.
                 </SheetDescription>
               </SheetHeader>
-              <div className="py-4">{renderToolbar()}</div>
+              <div className="py-4 space-y-4">
+                {renderToolbar(brushSize, handleBrushSizeChange)}
+              </div>
             </SheetContent>
           </Sheet>
         </div>
@@ -65,7 +84,7 @@ const DrawPage: React.FC = () => {
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Tools</h2>
           </div>
-          {renderToolbar()}
+          {renderToolbar(brushSize, handleBrushSizeChange)}
         </div>
         <div className="flex-grow">
           <div className="aspect-video bg-zinc-200 rounded-lg flex items-center justify-center dark:bg-zinc-800">
@@ -77,7 +96,10 @@ const DrawPage: React.FC = () => {
   );
 };
 
-const renderToolbar = () => (
+const renderToolbar = (
+  brushSize: number,
+  handleBrushSizeChange: (value: number[]) => void,
+) => (
   <>
     <div className="space-y-2">
       <Label htmlFor="tool-select">Drawing Tool</Label>
@@ -117,11 +139,13 @@ const renderToolbar = () => (
         step={1}
         defaultValue={[10]}
         className="w-full"
+        onValueChange={handleBrushSizeChange}
       />
+      <p className="text-sm text-zinc-700 dark:text-zinc-400">{brushSize} px</p>
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor="class-select">Select Class</Label>
+      <Label htmlFor="class-select">Class</Label>
       <Select>
         <SelectTrigger id="class-select">
           <SelectValue placeholder="Select a class" />
@@ -135,15 +159,15 @@ const renderToolbar = () => (
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor="add-class">Add New Class</Label>
+      <Label htmlFor="add-class">New Class</Label>
       <div className="flex space-x-2">
         <Input id="add-class" placeholder="Class name" />
         <Button>Add</Button>
       </div>
     </div>
 
-    <div className="space-y-2 mt-8">
-      <Button className="w-full" variant="secondary">
+    <div className="space-y-2">
+      <Button className="w-full mt-4 sm:mt-1" variant="secondary">
         <RotateCcw className="mr-2 h-4 w-4" /> Undo
       </Button>
       <Button className="w-full" variant="outline">
