@@ -16,7 +16,7 @@ const Hero: React.FC = () => {
           Empower your AI vision projects with Polygon's cutting-edge labeling
           tool. Precision meets efficiency in every annotation.
         </p>
-        <div className="flex justify-start space-x-4 items-center">
+        <div className="flex flex-col sm:flex-row justify-start space-x-4 items-center">
           <Link to="/draw">
             <Button
               size="lg"

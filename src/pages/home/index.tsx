@@ -5,7 +5,7 @@ import GithubSection from './GithubSection';
 import Header from './Header';
 import Hero from './Hero';
 
-function Home() {
+export default function HomePage() {
   return (
     <>
       <div className="min-h-screen bg-zinc-950 text-zinc-50">
@@ -20,5 +20,3 @@ function Home() {
     </>
   );
 }
-
-export default Home;

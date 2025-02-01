@@ -16,7 +16,7 @@ import {
 import { Link } from 'react-router';
 import { Button } from '../../components/ui/button';
 
-export default function Page() {
+export default function DrawPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -31,9 +31,9 @@ export default function Page() {
                   Building Your Application
                 </BreadcrumbLink>
                 <BreadcrumbLink>
-                  <Button>
-                    <Link to="/">Go to Home</Link>
-                  </Button>
+                  <Link to="/">
+                    <Button>Go to Home</Button>
+                  </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
