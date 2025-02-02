@@ -37,14 +37,15 @@ import {
 import type React from 'react';
 import { useCallback, useState } from 'react';
 import BackAlertDialog from './BackAlertDialog';
+import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
 
 const DrawPage: React.FC = () => {
   const [brushSize, setBrushSize] = useState(10);
   const [classes, setClasses] = useState<DrawClass[]>([]);
   const [newClassName, setNewClassName] = useState('');
   const [newClassColor, setNewClassColor] = useState(getRandomColor());
+  const [toggle, setToggle] = useState('draw');
 
-  
   const findClassByName = (className: string): DrawClass | null => {
     // TODO: implement
     return null;
@@ -111,6 +112,9 @@ const DrawPage: React.FC = () => {
     <>
       <Toaster />
       <div className="space-y-2">
+        <div className="flex pb-4 -pt-2">
+          <ToolSelectorToggleGroup setToggle={setToggle} />
+        </div>
         <Label htmlFor="tool-select">Drawing Tool</Label>
         <Select defaultValue="brush">
           <SelectTrigger id="tool-select">
@@ -266,7 +270,7 @@ const DrawPage: React.FC = () => {
           {renderToolbar()}
         </div>
         <div className="flex-grow">
-          <div className="aspect-video bg-zinc-200 rounded-lg flex items-center justify-center dark:bg-zinc-800">
+          <div className="w-full h-screen bg-zinc-200 rounded-lg flex items-center justify-center dark:bg-zinc-800">
             <p className="text-zinc-500 dark:text-zinc-500">Canvas Area</p>
           </div>
         </div>
