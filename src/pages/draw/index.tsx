@@ -47,8 +47,7 @@ const DrawPage: React.FC = () => {
   const [toggle, setToggle] = useState('draw');
 
   const findClassByName = (className: string): DrawClass | null => {
-    // TODO: implement
-    return null;
+    return classes.find(c => c.name === className) || null;
   };
 
   const handleBrushSizeChange = (value: number[]) => {
