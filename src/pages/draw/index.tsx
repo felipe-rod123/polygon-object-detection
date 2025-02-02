@@ -21,6 +21,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
+import { DrawClass } from '@/types/DrawClass';
 import { getRandomColor } from '@/utils/getRandomColor';
 import {
   Box,
@@ -37,16 +38,17 @@ import type React from 'react';
 import { useCallback, useState } from 'react';
 import BackAlertDialog from './BackAlertDialog';
 
-interface Class {
-  name: string;
-  color: string;
-}
-
 const DrawPage: React.FC = () => {
   const [brushSize, setBrushSize] = useState(10);
-  const [classes, setClasses] = useState<Class[]>([]);
+  const [classes, setClasses] = useState<DrawClass[]>([]);
   const [newClassName, setNewClassName] = useState('');
   const [newClassColor, setNewClassColor] = useState(getRandomColor());
+
+  
+  const findClassByName = (className: string): DrawClass | null => {
+    // TODO: implement
+    return null;
+  };
 
   const handleBrushSizeChange = (value: number[]) => {
     setBrushSize(value[0]);
@@ -101,6 +103,10 @@ const DrawPage: React.FC = () => {
     setClasses(prevClasses => prevClasses.filter(c => c.name !== className));
   };
 
+  const handleClassSelected = (className: string) => {
+    console.log(className); // FIXME
+  };
+
   const renderToolbar = () => (
     <>
       <Toaster />
@@ -151,7 +157,7 @@ const DrawPage: React.FC = () => {
 
       <div className="space-y-2">
         <Label htmlFor="class-select">Class</Label>
-        <Select>
+        <Select onValueChange={handleClassSelected}>
           <SelectTrigger id="class-select">
             <SelectValue placeholder="Select a class" />
           </SelectTrigger>
