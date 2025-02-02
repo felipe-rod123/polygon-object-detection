@@ -50,7 +50,7 @@ const Features: React.FC = () => {
   return (
     <section
       id="features"
-      className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-zinc-900"
+      className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-neutral-900"
     >
       <div className="container mx-auto">
         <h2 className="text-4xl font-bold text-center mb-16 text-zinc-900 dark:text-zinc-100">

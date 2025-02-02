@@ -1,4 +1,5 @@
 import ColorPicker from '@/components/color-picker';
+import ThemeSwitchButton from '@/components/theme-switch-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,9 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
+import { getRandomColor } from '@/utils/getRandomColor';
 import {
   Box,
   Brush,
@@ -27,11 +31,10 @@ import {
   Menu,
   RotateCcw,
   Square,
+  Trash2,
 } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useState } from 'react';
-import ThemeSwitchButton from '../../components/theme-switch-button';
-import { getRandomColor } from '../../utils/getRandomColor';
 import BackAlertDialog from './BackAlertDialog';
 
 interface Class {
@@ -43,25 +46,64 @@ const DrawPage: React.FC = () => {
   const [brushSize, setBrushSize] = useState(10);
   const [classes, setClasses] = useState<Class[]>([]);
   const [newClassName, setNewClassName] = useState('');
-  const [newClassColor, setNewClassColor] = useState('');
+  const [newClassColor, setNewClassColor] = useState(getRandomColor());
 
   const handleBrushSizeChange = (value: number[]) => {
     setBrushSize(value[0]);
   };
 
+  const { toast } = useToast();
+
   const handleAddClass = useCallback(() => {
-    if (newClassName && newClassColor) {
-      setClasses(prev => [
-        ...prev,
-        { name: newClassName, color: newClassColor },
-      ]);
-      setNewClassName('');
-      setNewClassColor(getRandomColor());
+    if (!newClassName || !newClassColor) return;
+
+    const nameExists = classes.some(c => c.name === newClassName);
+    const colorExists = classes.some(c => c.color === newClassColor);
+
+    if (nameExists) {
+      toast({
+        title: 'Duplicate Class Name',
+        description: (
+          <>
+            A class with the name <strong>{newClassName}</strong> already
+            exists. Please choose a different name.
+          </>
+        ),
+      });
+      return;
     }
+
+    if (colorExists) {
+      toast({
+        title: 'Duplicate Class Color',
+        description: (
+          <div className="flex flex-row items-center align-middle">
+            <div
+              className="w-4 h-4 p-4 m-4 rounded-full"
+              style={{ backgroundColor: newClassColor }}
+            />
+            <p>
+              A class with the color <strong>{newClassColor}</strong> already
+              exists. Please choose a different color.
+            </p>
+          </div>
+        ),
+      });
+      return;
+    }
+
+    setClasses(prev => [...prev, { name: newClassName, color: newClassColor }]);
+    setNewClassName('');
+    setNewClassColor(getRandomColor());
   }, [newClassName, newClassColor, classes]);
+
+  const handleDeleteClass = (className: string) => {
+    setClasses(prevClasses => prevClasses.filter(c => c.name !== className));
+  };
 
   const renderToolbar = () => (
     <>
+      <Toaster />
       <div className="space-y-2">
         <Label htmlFor="tool-select">Drawing Tool</Label>
         <Select defaultValue="brush">
@@ -113,15 +155,24 @@ const DrawPage: React.FC = () => {
           <SelectTrigger id="class-select">
             <SelectValue placeholder="Select a class" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-60 overflow-y-auto">
             {classes.map((c, index) => (
               <SelectItem key={index} value={c.name}>
-                <div className="flex items-center">
-                  <div
-                    className="w-4 h-4 rounded-full mr-2"
-                    style={{ backgroundColor: c.color }}
-                  />
-                  {c.name}
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center">
+                    <div
+                      className="w-4 h-4 rounded-full mr-2"
+                      style={{ backgroundColor: c.color }}
+                    />
+                    {c.name}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteClass(c.name)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </SelectItem>
             ))}
@@ -141,6 +192,7 @@ const DrawPage: React.FC = () => {
           <ColorPicker
             onChange={setNewClassColor}
             initialColor={newClassColor}
+            key={newClassColor} // Add key to force re-render
           />
         </div>
         <Button onClick={handleAddClass} className="w-full">

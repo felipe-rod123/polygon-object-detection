@@ -18,7 +18,7 @@ const BackAlertDialog = () => {
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger>
+      <AlertDialogTrigger asChild>
         <Button variant="ghost">
           <ArrowLeft className="h-6 w-6" />
           Back
