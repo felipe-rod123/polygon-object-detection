@@ -30,6 +30,8 @@ export default function ToolSelectorToggleGroup({
     }
   };
 
+  // TODO: Refactor this code and write using Enums and Object Literals
+
   return (
     <TooltipProvider>
       <ToggleGroup

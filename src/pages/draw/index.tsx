@@ -46,15 +46,14 @@ const DrawPage: React.FC = () => {
   let navigate = useNavigate();
 
   const [brushSize, setBrushSize] = useState(10);
-  const [classes, setClasses] = useState<DrawClass[]>([]);
-  const [selectedClass, setSelectedClass] = useState<DrawClass>();
+
+  const [classes, setClasses] = useState<Map<string, DrawClass>>(new Map());
+  const colorSet = new Set<string>();
+
+  const [selectedClass, setSelectedClass] = useState<DrawClass | null>(null);
   const [newClassName, setNewClassName] = useState('');
   const [newClassColor, setNewClassColor] = useState(getRandomColor());
   const [toggle, setToggle] = useState('draw');
-
-  const findClassByName = (className: string): DrawClass | null => {
-    return classes.find(c => c.name === className) || null;
-  };
 
   const handleBrushSizeChange = (value: number[]) => {
     setBrushSize(value[0]);
@@ -62,56 +61,54 @@ const DrawPage: React.FC = () => {
 
   const { toast } = useToast();
 
+  // O(1) because uses a Map to search an index
+  const findClassByName = (className: string): DrawClass | null => {
+    return classes.get(className) || null;
+  };
+
+  // O(1) because Map allows direct lookup by key
+  const handleClassSelected = (className: string) => {
+    setSelectedClass(classes.get(className) || null);
+  };
+
+  // O(n), where n is the number of classes in the `classes` Map
   const handleAddClass = useCallback(() => {
     if (!newClassName || !newClassColor) return;
 
-    const nameExists = classes.some(c => c.name === newClassName);
-    const colorExists = classes.some(c => c.color === newClassColor);
-
-    if (nameExists) {
+    if (classes.has(newClassName)) {
       toast({
         title: 'Duplicate Class Name',
-        description: (
-          <>
-            A class with the name <strong>{newClassName}</strong> already
-            exists. Please choose a different name.
-          </>
-        ),
+        description: `A class with the name ${newClassName} already exists. Please choose a different name.`,
       });
       return;
     }
 
-    if (colorExists) {
+    if (colorSet.has(newClassColor)) {
       toast({
         title: 'Duplicate Class Color',
-        description: (
-          <div className="flex flex-row items-center align-middle">
-            <div
-              className="w-4 h-4 p-4 m-4 rounded-full"
-              style={{ backgroundColor: newClassColor }}
-            />
-            <p>
-              A class with the color <strong>{newClassColor}</strong> already
-              exists. Please choose a different color.
-            </p>
-          </div>
-        ),
+        description: `A class with the color ${newClassColor} already exists. Please choose a different color.`,
       });
       return;
     }
 
-    setClasses(prev => [...prev, { name: newClassName, color: newClassColor }]);
+    const newClass: DrawClass = { name: newClassName, color: newClassColor };
+    setClasses(prev => new Map(prev).set(newClassName, newClass));
+    colorSet.add(newClassColor);
     setNewClassName('');
     setNewClassColor(getRandomColor());
   }, [newClassName, newClassColor, classes]);
 
+  // O(1) deletion because Map and Set support direct key removal
   const handleDeleteClass = (className: string) => {
-    setClasses(prevClasses => prevClasses.filter(c => c.name !== className));
-  };
-
-  const handleClassSelected = (className: string) => {
-    const drawClass = findClassByName(className);
-    if (drawClass) setSelectedClass(drawClass);
+    setClasses(prevClasses => {
+      const newClasses = new Map(prevClasses);
+      const classToDelete = newClasses.get(className);
+      if (classToDelete) {
+        colorSet.delete(classToDelete.color);
+      }
+      newClasses.delete(className);
+      return newClasses;
+    });
   };
 
   const renderToolbar = () => (
@@ -178,7 +175,7 @@ const DrawPage: React.FC = () => {
               <SelectValue placeholder="Select a class" />
             </SelectTrigger>
             <SelectContent className="max-h-60 overflow-y-auto">
-              {classes.map((c, index) => (
+              {Array.from(classes.values()).map((c, index) => (
                 <SelectItem key={index} value={c.name}>
                   <div className="flex items-center">
                     <div
