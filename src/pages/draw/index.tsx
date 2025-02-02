@@ -3,6 +3,7 @@ import ThemeSwitchButton from '@/components/theme-switch-button';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -24,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DrawClass } from '@/types/DrawClass';
 import { getRandomColor } from '@/utils/getRandomColor';
 import {
+  ArrowLeft,
   Box,
   Brush,
   Download,
@@ -32,16 +34,20 @@ import {
   Menu,
   RotateCcw,
   Square,
-  Trash2,
+  X,
 } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useState } from 'react';
-import BackAlertDialog from './BackAlertDialog';
+import { useNavigate } from 'react-router';
+import ButtonAlertDialog from './ButtonAlertDialog';
 import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
 
 const DrawPage: React.FC = () => {
+  let navigate = useNavigate();
+
   const [brushSize, setBrushSize] = useState(10);
   const [classes, setClasses] = useState<DrawClass[]>([]);
+  const [selectedClass, setSelectedClass] = useState<DrawClass>();
   const [newClassName, setNewClassName] = useState('');
   const [newClassColor, setNewClassColor] = useState(getRandomColor());
   const [toggle, setToggle] = useState('draw');
@@ -104,70 +110,76 @@ const DrawPage: React.FC = () => {
   };
 
   const handleClassSelected = (className: string) => {
-    console.log(className); // FIXME
+    const drawClass = findClassByName(className);
+    if (drawClass) setSelectedClass(drawClass);
   };
 
   const renderToolbar = () => (
     <>
-      <Toaster />
-      <div className="space-y-2">
-        <div className="flex pb-4 -pt-2">
-          <ToolSelectorToggleGroup setToggle={setToggle} />
-        </div>
-        <Label htmlFor="tool-select">Drawing Tool</Label>
-        <Select defaultValue="brush">
-          <SelectTrigger id="tool-select">
-            <SelectValue placeholder="Select tool" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="brush">
-              <div className="flex items-center">
-                <Brush className="mr-2 h-4 w-4" />
-                Brush
-              </div>
-            </SelectItem>
-            <SelectItem value="polygon">
-              <div className="flex items-center">
-                <Square className="mr-2 h-4 w-4" />
-                Polygon
-              </div>
-            </SelectItem>
-            <SelectItem value="eraser">
-              <div className="flex items-center">
-                <Eraser className="mr-2 h-4 w-4" />
-                Eraser
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex md:justify-start justify-center">
+        <ToolSelectorToggleGroup setToggle={setToggle} />
       </div>
+      <div className="space-y-6">
+        <Toaster />
 
-      <div className="space-y-2">
-        <Label htmlFor="brush-size">Brush Size</Label>
-        <Slider
-          id="brush-size"
-          min={1}
-          max={50}
-          step={1}
-          value={[brushSize]}
-          onValueChange={handleBrushSizeChange}
-          className="w-full"
-        />
-        <p className="text-sm text-zinc-700 dark:text-zinc-400">
-          {brushSize} px
-        </p>
-      </div>
+        {toggle == 'draw' && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="tool-select">Drawing Tool</Label>
+              <Select defaultValue="brush">
+                <SelectTrigger id="tool-select">
+                  <SelectValue placeholder="Select tool" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="brush">
+                    <div className="flex items-center">
+                      <Brush className="mr-2 h-4 w-4" />
+                      Brush
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="polygon">
+                    <div className="flex items-center">
+                      <Square className="mr-2 h-4 w-4" />
+                      Polygon
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="eraser">
+                    <div className="flex items-center">
+                      <Eraser className="mr-2 h-4 w-4" />
+                      Eraser
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="class-select">Class</Label>
-        <Select onValueChange={handleClassSelected}>
-          <SelectTrigger id="class-select">
-            <SelectValue placeholder="Select a class" />
-          </SelectTrigger>
-          <SelectContent className="max-h-60 overflow-y-auto">
-            {classes.map((c, index) => (
-              <SelectItem key={index} value={c.name}>
-                <div className="flex items-center justify-between w-full">
+            <div className="space-y-2">
+              <Label htmlFor="brush-size">Brush Size</Label>
+              <Slider
+                id="brush-size"
+                min={1}
+                max={50}
+                step={1}
+                value={[brushSize]}
+                onValueChange={handleBrushSizeChange}
+                className="w-full"
+              />
+              <p className="text-sm text-zinc-700 dark:text-zinc-400">
+                {brushSize} px
+              </p>
+            </div>
+          </>
+        )}
+
+        <div className="flex flex-col space-y-2">
+          <Label htmlFor="class-select">Class</Label>
+          <Select onValueChange={handleClassSelected}>
+            <SelectTrigger id="class-select">
+              <SelectValue placeholder="Select a class" />
+            </SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              {classes.map((c, index) => (
+                <SelectItem key={index} value={c.name}>
                   <div className="flex items-center">
                     <div
                       className="w-4 h-4 rounded-full mr-2"
@@ -175,50 +187,58 @@ const DrawPage: React.FC = () => {
                     />
                     {c.name}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteClass(c.name)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="add-class">New Class</Label>
-        <div className="flex space-x-2 items-center">
-          <Input
-            id="add-class"
-            placeholder="Class name"
-            value={newClassName}
-            onChange={e => setNewClassName(e.target.value)}
-          />
-          <ColorPicker
-            onChange={setNewClassColor}
-            initialColor={newClassColor}
-            key={newClassColor} // Add key to force re-render
-          />
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedClass && (
+            <ButtonAlertDialog
+              buttonText="Delete class"
+              buttonIcon={<X className="h-3 w-3" />}
+              dialogTitle="Confirm Deletion"
+              dialogDescription={
+                <>
+                  Are you certain you want to delete the class "
+                  <strong>{selectedClass.name}</strong>"? This action cannot be
+                  undone.
+                </>
+              }
+              onClick={() => handleDeleteClass(selectedClass.name)}
+            />
+          )}
         </div>
-        <Button onClick={handleAddClass} className="w-full">
-          Add Class
-        </Button>
-      </div>
 
-      <div className="space-y-2">
-        <Button className="w-full mt-4 sm:mt-1" variant="secondary">
-          <RotateCcw className="mr-2 h-4 w-4" /> Undo
-        </Button>
-        <Button className="w-full" variant="outline">
-          <Download className="mr-2 h-4 w-4" /> Export COCO
-        </Button>
-        <Button className="w-full" variant="outline">
-          <Image className="mr-2 h-4 w-4" /> Save as SVG
-        </Button>
+        <div className="space-y-2">
+          <Label htmlFor="add-class">New Class</Label>
+          <div className="flex space-x-2 items-center">
+            <Input
+              id="add-class"
+              placeholder="Class name"
+              value={newClassName}
+              onChange={e => setNewClassName(e.target.value)}
+            />
+            <ColorPicker
+              onChange={setNewClassColor}
+              initialColor={newClassColor}
+              key={newClassColor} // Add key to force re-render
+            />
+          </div>
+          <Button onClick={handleAddClass} className="w-full">
+            Add Class
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <Button className="w-full mt-4 sm:mt-1" variant="secondary">
+            <RotateCcw className="mr-2 h-4 w-4" /> Undo
+          </Button>
+          <Button className="w-full" variant="outline">
+            <Download className="mr-2 h-4 w-4" /> Export COCO
+          </Button>
+          <Button className="w-full" variant="outline">
+            <Image className="mr-2 h-4 w-4" /> Save as SVG
+          </Button>
+        </div>
       </div>
     </>
   );
@@ -233,10 +253,21 @@ const DrawPage: React.FC = () => {
           />
           polygon
         </div>
-        <div className="flex items-center space-x-2">
-          <BackAlertDialog />
+        <ScrollArea className="flex items-center space-x-2 overflow-y-auto max-h-screen">
+          <div className="flex space-x-2">
+            <ButtonAlertDialog
+              buttonText="Back"
+              buttonIcon={<ArrowLeft className="h-6 w-6" />}
+              dialogTitle="Are you sure?"
+              dialogDescription="You are about to leave this page. Any unsaved changes on the canvas will be lost. Please ensure you have exported your work before
+            proceeding."
+              onClick={() => {
+                navigate('/');
+              }}
+            />
+            <ThemeSwitchButton />
+          </div>
 
-          <ThemeSwitchButton />
           {/* MOBILE RESPONSIVE SIDEBAR LAYOUT */}
           <Sheet>
             <SheetTrigger asChild>
@@ -257,7 +288,7 @@ const DrawPage: React.FC = () => {
               <div className="py-4 space-y-4">{renderToolbar()}</div>
             </SheetContent>
           </Sheet>
-        </div>
+        </ScrollArea>
       </header>
 
       {/* DESKTOP AND LARGER SCREENS LAYOUT */}
