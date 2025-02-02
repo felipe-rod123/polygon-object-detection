@@ -33,7 +33,10 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
           <Button
             variant="default"
             className="rounded-full w-8 h-8"
-            style={{ backgroundColor: color }}
+            style={{
+              backgroundColor: color,
+              border: '1px solid #18181b54', // zinc-950 color
+            }}
           >
             <span className="sr-only">Pick a color</span>
           </Button>
@@ -50,7 +53,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
           <HexColorInput
             color={color}
             onChange={handleColorChange}
-            className="flex w-full px-2 py-1 rounded-sm"
+            className="flex w-full px-2 py-1 rounded-sm bg-zinc-200 shadow-sm dark:bg-zinc-800"
           />
         </PopoverContent>
       </Popover>

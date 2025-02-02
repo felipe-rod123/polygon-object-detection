@@ -31,6 +31,7 @@ export const useDrawHandlers = () => {
 
     if (classes.has(newClassName)) {
       toast({
+        variant: 'destructive',
         title: 'Duplicate Class Name',
         description: `A class with the name ${newClassName} already exists. Please choose a different name.`,
       });
@@ -39,6 +40,7 @@ export const useDrawHandlers = () => {
 
     if (colorSet.has(newClassColor)) {
       toast({
+        variant: 'destructive',
         title: 'Duplicate Class Color',
         description: `A class with the color ${newClassColor} already exists. Please choose a different color.`,
       });
@@ -62,8 +64,13 @@ export const useDrawHandlers = () => {
           newSet.delete(classToDelete.color);
           return newSet;
         });
+        toast({
+          title: 'Class Deleted',
+          description: `The class ${className} has been successfully deleted.`,
+        });
       }
       newClasses.delete(className);
+      setSelectedClass(null);
       return newClasses;
     });
   };

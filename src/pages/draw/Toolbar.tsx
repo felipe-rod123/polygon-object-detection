@@ -21,7 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import type React from 'react';
-import ButtonAlertDialog from './ButtonAlertDialog';
+import ButtonAlertDialog from '../../components/button-alert-dialog';
 import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
 
 interface ToolbarProps {
@@ -112,7 +112,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
         <div className="flex flex-col space-y-2">
           <Label htmlFor="class-select">Class</Label>
-          <Select onValueChange={handleClassSelected}>
+          <Select
+            onValueChange={handleClassSelected}
+            value={selectedClass ? selectedClass.name : ''}
+          >
             <SelectTrigger id="class-select">
               <SelectValue placeholder="Select a class" />
             </SelectTrigger>
@@ -162,7 +165,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
               key={newClassColor}
             />
           </div>
-          <Button onClick={handleAddClass} className="w-full">
+          <Button
+            onClick={handleAddClass}
+            className="w-full"
+            // disabled={!newClassName.trim()}
+          >
             Add Class
           </Button>
         </div>

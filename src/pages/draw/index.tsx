@@ -14,7 +14,8 @@ import { useDrawHandlers } from '@/utils/drawHandlers';
 import { ArrowLeft, Box, Menu } from 'lucide-react';
 import type React from 'react';
 import { useNavigate } from 'react-router';
-import ButtonAlertDialog from './ButtonAlertDialog';
+import ButtonAlertDialog from '../../components/button-alert-dialog';
+import Canvas from './Canvas';
 import Toolbar from './Toolbar';
 
 const DrawPage: React.FC = () => {
@@ -120,11 +121,7 @@ const DrawPage: React.FC = () => {
             handleAddClass={handleAddClass}
           />
         </div>
-        <div className="flex-grow">
-          <div className="w-full h-screen bg-zinc-200 rounded-lg flex items-center justify-center dark:bg-zinc-800">
-            <p className="text-zinc-500 dark:text-zinc-500">Canvas Area</p>
-          </div>
-        </div>
+        <Canvas />
       </main>
       <Toaster />
     </div>

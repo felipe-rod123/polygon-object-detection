@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import React, { ReactElement } from 'react';
-import { Button } from '../../components/ui/button';
+import { Button } from './ui/button';
 
 interface ButtonAlertDialogProps {
   buttonText: string;
