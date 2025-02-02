@@ -1,2 +1,78 @@
 # frontend-overview-case
-Felipe Rodrigues' Front-end take-home test for Overview.ai
+
+Felipe Rodrigues' front-end take-home test.
+
+## Polygon 🖌️
+
+_Polygon_ is a semantic segmentation labeling tool designed to facilitate the creation of high-quality annotations for AI computer vision models. This tool provides a user-friendly interface for annotating images with various tools and features, ensuring precision and efficiency in the labeling process.
+
+### Features ✅
+
+#### Annotation Options
+
+- **Brush Annotation**: Toggle between brush annotation and polygon annotation modes.
+- **Brush Size**: Allow users to choose the brush size when in brush mode.
+
+#### Class Management
+
+- **Define Classes**: Provide a way to define class names and assign a unique color to each class.
+- **Color Management**: Ensure no overlap of colors (pixels should only belong to one class).
+
+#### Editing Tools
+
+- **Eraser Tool**: Include an eraser tool to remove annotations.
+- **Undo Functionality**: Provide undo functionality to reverse the last action.
+
+#### Canvas
+
+- **Interactive Canvas**: Use Fabric.js for interactive canvas manipulation.
+- **Responsive Layout**: Ensure a responsive layout suitable for smaller screens.
+
+#### Export Features
+
+- **Export Annotations**: Provide an option to export the annotations in COCO format.
+
+### Installation Prerequisites 🛠️
+
+Before setting up the project, ensure you have the following installed:
+
+- **Node.js** (version 14 or higher)
+- **npm** (version 6 or higher)
+- **Flask** v2.3.3
+- **pydantic** v1.10.11
+
+### Setup and Run 🚀
+
+To set up and run the project locally, follow these steps:
+
+1. Clone the repository:
+
+```sh
+git clone <repo-url>
+cd polygon
+```
+
+2. Install the dependencies and start the development server:
+
+```sh
+npm i && npm run dev
+```
+
+3. Open the browser and navigate to `http://localhost:<port>` to view the application.
+4. Run Prettier on the entire codebase to format it according to the defined rules:
+
+```sh
+npm run format
+```
+
+### Contributing 🤝
+
+This project is open source and contributions are welcome! Feel free to fork the repository and submit pull requests.
+
+### License 📄
+
+This project is licensed under the MIT License.
+
+### Contact 📬
+
+Reach out to me at my [GitHub](https://github.com/felipe-rod123) for any questions or feedback!
