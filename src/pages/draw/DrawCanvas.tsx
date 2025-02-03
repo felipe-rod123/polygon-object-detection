@@ -2,13 +2,15 @@ import { EraserBrush } from '@erase2d/fabric';
 import * as fabric from 'fabric';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type DrawingMode = 'brush' | 'eraser' | 'polygon';
+type DrawingMode = 'brush' | 'eraser' | 'rectangle' | 'polygon';
 
 export default function CanvasDrawing() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
   const [mode, setMode] = useState<DrawingMode>('brush');
   const [canUndo, setCanUndo] = useState(false);
+  const polygonRef = useRef<fabric.Polygon | null>(null);
+  const pointsRef = useRef<fabric.Circle[]>([]);
 
   // Initialize canvas
   useEffect(() => {
@@ -32,14 +34,6 @@ export default function CanvasDrawing() {
     // Listen for object modifications
     canvas.on('object:modified', updateUndoState);
 
-    // Initialize brushes
-    const pencilBrush = new fabric.PencilBrush(canvas);
-    pencilBrush.width = 5;
-    pencilBrush.color = '#000000';
-
-    const eraserBrush = new EraserBrush(canvas);
-    eraserBrush.width = 20;
-
     return () => {
       canvas.dispose();
     };
@@ -58,7 +52,7 @@ export default function CanvasDrawing() {
     const canvas = fabricRef.current;
     if (!canvas) return;
 
-    canvas.isDrawingMode = mode !== 'polygon';
+    canvas.isDrawingMode = mode === 'brush' || mode === 'eraser';
 
     if (mode === 'brush') {
       const pencilBrush = new fabric.PencilBrush(canvas);
@@ -66,7 +60,6 @@ export default function CanvasDrawing() {
       pencilBrush.color = '#000000';
       canvas.freeDrawingBrush = pencilBrush;
 
-      // Ensure any new paths created are erasable
       canvas.off('path:created');
       canvas.on('path:created', ({ path }) => {
         path.erasable = true;
@@ -79,13 +72,13 @@ export default function CanvasDrawing() {
       canvas.freeDrawingBrush = eraserBrush;
     }
 
-    // Remove polygon mode listeners when switching to other modes
+    // Remove all mode-specific listeners
     canvas.off('mouse:down');
     canvas.off('mouse:move');
     canvas.off('mouse:up');
 
-    // Set up polygon (rectangle) mode
-    if (mode === 'polygon') {
+    // Set up rectangle mode
+    if (mode === 'rectangle') {
       let isDrawing = false;
       let startX = 0;
       let startY = 0;
@@ -134,6 +127,93 @@ export default function CanvasDrawing() {
         updateUndoState();
       });
     }
+
+    // Set up polygon mode
+    if (mode === 'polygon') {
+      canvas.on('mouse:down', options => {
+        const pointer = canvas.getPointer(options.e);
+        const x = pointer.x;
+        const y = pointer.y;
+
+        if (pointsRef.current.length === 0) {
+          // First point (reference point)
+          const firstPoint = new fabric.Circle({
+            left: x,
+            top: y,
+            radius: 5,
+            fill: 'red',
+            originX: 'center',
+            originY: 'center',
+            erasable: true,
+          });
+          canvas.add(firstPoint);
+          pointsRef.current.push(firstPoint);
+        } else {
+          const lastPoint = pointsRef.current[pointsRef.current.length - 1];
+          const distanceToFirst = Math.sqrt(
+            Math.pow(x - pointsRef.current[0].left!, 2) +
+              Math.pow(y - pointsRef.current[0].top!, 2),
+          );
+
+          if (distanceToFirst < 10 && pointsRef.current.length > 2) {
+            // Close the polygon
+            const points = pointsRef.current.map(point => ({
+              x: point.left!,
+              y: point.top!,
+            }));
+
+            const polygon = new fabric.Polygon(points, {
+              fill: 'rgba(0, 255, 0, 0.3)',
+              stroke: 'green',
+              strokeWidth: 2,
+              erasable: true,
+            });
+
+            canvas.remove(...pointsRef.current);
+            canvas.add(polygon);
+            canvas.renderAll();
+
+            // Reset for next polygon
+            pointsRef.current = [];
+            polygonRef.current = null;
+          } else {
+            // Add a new point
+            const newPoint = new fabric.Circle({
+              left: x,
+              top: y,
+              radius: 3,
+              fill: 'blue',
+              originX: 'center',
+              originY: 'center',
+              erasable: true,
+            });
+            canvas.add(newPoint);
+            pointsRef.current.push(newPoint);
+
+            // Update or create the polygon
+            if (polygonRef.current) {
+              canvas.remove(polygonRef.current);
+            }
+
+            const points = pointsRef.current.map(point => ({
+              x: point.left!,
+              y: point.top!,
+            }));
+
+            polygonRef.current = new fabric.Polygon(points, {
+              fill: 'transparent',
+              stroke: 'blue',
+              strokeWidth: 2,
+              erasable: true,
+            });
+
+            canvas.add(polygonRef.current);
+            canvas.renderAll();
+          }
+        }
+        updateUndoState();
+      });
+    }
   }, [mode, updateUndoState]);
 
   // Clear canvas handler
@@ -144,6 +224,8 @@ export default function CanvasDrawing() {
     canvas.backgroundColor = '#ffffff';
     canvas.renderAll();
     updateUndoState();
+    pointsRef.current = [];
+    polygonRef.current = null;
   }, [updateUndoState]);
 
   // Undo handler
@@ -152,11 +234,39 @@ export default function CanvasDrawing() {
     if (!canvas) return;
     const objects = canvas._objects;
     if (objects.length > 0) {
-      canvas.remove(objects[objects.length - 1]);
+      if (mode === 'polygon') {
+        // For polygon mode, remove the last point
+        if (pointsRef.current.length > 0) {
+          const lastPoint = pointsRef.current.pop();
+          if (lastPoint) canvas.remove(lastPoint);
+
+          if (polygonRef.current) {
+            canvas.remove(polygonRef.current);
+            if (pointsRef.current.length > 1) {
+              const points = pointsRef.current.map(point => ({
+                x: point.left!,
+                y: point.top!,
+              }));
+              polygonRef.current = new fabric.Polygon(points, {
+                fill: 'transparent',
+                stroke: 'blue',
+                strokeWidth: 2,
+                erasable: true,
+              });
+              canvas.add(polygonRef.current);
+            } else {
+              polygonRef.current = null;
+            }
+          }
+        }
+      } else {
+        // For other modes, remove the last object
+        canvas.remove(objects[objects.length - 1]);
+      }
       canvas.renderAll();
       updateUndoState();
     }
-  }, [updateUndoState]);
+  }, [mode, updateUndoState]);
 
   return (
     <div className="canvas-container">
@@ -180,13 +290,22 @@ export default function CanvasDrawing() {
           Eraser
         </button>
         <button
+          onClick={() => setMode('rectangle')}
+          style={{
+            backgroundColor: mode === 'rectangle' ? '#007bff' : '#ffffff',
+            color: mode === 'rectangle' ? '#ffffff' : '#000000',
+          }}
+        >
+          Rectangle
+        </button>
+        <button
           onClick={() => setMode('polygon')}
           style={{
             backgroundColor: mode === 'polygon' ? '#007bff' : '#ffffff',
             color: mode === 'polygon' ? '#ffffff' : '#000000',
           }}
         >
-          Rectangle
+          Polygon
         </button>
         <button onClick={handleClear}>Clear Canvas</button>
         <button onClick={handleUndo} disabled={!canUndo}>
