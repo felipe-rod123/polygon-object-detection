@@ -170,6 +170,7 @@ export default function CanvasDrawing() {
             });
 
             canvas.remove(...pointsRef.current);
+            if (polygonRef.current) canvas.remove(polygonRef.current); // Remove the polygon editing blue line
             canvas.add(polygon);
             canvas.renderAll();
 
