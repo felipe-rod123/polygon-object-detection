@@ -48,19 +48,26 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
     };
   }, []);
 
-  // Enable/disable free drawing
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    fabricCanvas.set({ isDrawingMode: mode.isDraw });
-
-    if (mode.isDraw) {
-      const brush = new PencilBrush(fabricCanvas);
-      brush.color = strokeColor;
-      brush.width = strokeWidth;
-      fabricCanvas.set({ freeDrawingBrush: brush });
+    if (canvasMode === ToolToggleEnum.DRAW) {
+      freeDraw();
+    } else {
+      fabricCanvas.set({ isDrawingMode: false });
     }
-  }, [fabricCanvas, mode, strokeColor, strokeWidth]);
+  }, [fabricCanvas, canvasMode, strokeColor, strokeWidth]);
+
+  const freeDraw = () => {
+    if (!fabricCanvas || !mode.isDraw) return;
+
+    fabricCanvas.set({ isDrawingMode: true });
+
+    const brush = new PencilBrush(fabricCanvas);
+    brush.color = strokeColor;
+    brush.width = strokeWidth;
+    fabricCanvas.set({ freeDrawingBrush: brush });
+  };
 
   const addRectangle = () => {
     if (!fabricCanvas) return;

@@ -30,6 +30,11 @@ const toolToggleGroup: toolToogleConfigs[] = [
     icon: <Pen className="h-4 w-4" />,
   },
   {
+    value: ToolToggleEnum.SELECT,
+    ariaLabel: 'Toggle selection',
+    icon: <SquareDashedMousePointer className="h-4 w-4" />,
+  },
+  {
     value: ToolToggleEnum.PAN,
     ariaLabel: 'Toggle mouse pan',
     icon: <Hand className="h-4 w-4" />,
@@ -38,11 +43,6 @@ const toolToggleGroup: toolToogleConfigs[] = [
     value: ToolToggleEnum.ROTATION,
     ariaLabel: 'Toggle rotation',
     icon: <Rotate3D className="h-4 w-4" />,
-  },
-  {
-    value: ToolToggleEnum.SELECT,
-    ariaLabel: 'Toggle selection',
-    icon: <SquareDashedMousePointer className="h-4 w-4" />,
   },
   {
     value: ToolToggleEnum.IMPORT,
