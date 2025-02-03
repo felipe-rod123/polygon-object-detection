@@ -11,11 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 
 const acceptedFileTypes = ['application/pdf', 'image/png', 'image/jpeg'];
 
-export function FileUploadModalButton() {
+const FileUploadModalButton = forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>((props, ref) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -52,7 +55,10 @@ export function FileUploadModalButton() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600">
+        <Button
+          ref={ref}
+          className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
+        >
           <Upload className="h-4 w-4 text-black dark:text-white" />
         </Button>
       </DialogTrigger>
@@ -110,4 +116,6 @@ export function FileUploadModalButton() {
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+export default FileUploadModalButton;

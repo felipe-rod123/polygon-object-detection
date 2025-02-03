@@ -11,9 +11,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { FileUploadModalButton } from './FileUploadModalButton';
 
 import { useToast } from '@/hooks/use-toast';
+import FileUploadModalButton from './FileUploadModalButton';
 
 interface toolToogleConfigs {
   value: ToolToggleEnum;
