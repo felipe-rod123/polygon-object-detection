@@ -1,10 +1,4 @@
-import {
-  Hand,
-  Pen,
-  Save,
-  SquareDashedMousePointer,
-  Upload,
-} from 'lucide-react';
+import { Hand, Pen, Save, SquareDashedMousePointer } from 'lucide-react';
 import React, { ReactElement, useState } from 'react';
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -17,6 +11,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { FileUploadModalButton } from './FileUploadModalButton';
+
+import { useToast } from '@/hooks/use-toast';
 
 interface toolToogleConfigs {
   value: ToolToggleEnum;
@@ -47,6 +44,8 @@ export default function ToolSelectorToggleGroup({
 }: {
   setToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
 }) {
+  const { toast } = useToast();
+
   const [toggleState, setToggleState] = useState<ToolToggleEnum>(
     ToolToggleEnum.DRAW,
   );
@@ -87,7 +86,16 @@ export default function ToolSelectorToggleGroup({
         </ToggleGroup>
         <Tooltip key="save">
           <TooltipTrigger asChild>
-            <Button className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600">
+            <Button
+              className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
+              onClick={() => {
+                toast({
+                  title: 'Save not implemented yet',
+                  description: 'Your files have not been saved locally.',
+                  variant: 'destructive',
+                });
+              }}
+            >
               <Save className="h-4 w-4 text-black dark:text-white" />
             </Button>
           </TooltipTrigger>
@@ -97,9 +105,7 @@ export default function ToolSelectorToggleGroup({
         </Tooltip>
         <Tooltip key="import">
           <TooltipTrigger asChild>
-            <Button className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600">
-              <Upload className="h-4 w-4 text-black dark:text-white" />
-            </Button>
+            <FileUploadModalButton />
           </TooltipTrigger>
           <TooltipContent>
             <p>Import file</p>
