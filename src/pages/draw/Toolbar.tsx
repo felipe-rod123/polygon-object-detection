@@ -28,7 +28,9 @@ import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
 interface ToolbarProps {
   toggle: string;
   setToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
+  handleDrawToolChange: (value: string) => void;
   brushSize: number;
+  drawTool: string;
   handleBrushSizeChange: (value: number[]) => void;
   classes: Map<string, DrawClass>;
   selectedClass: DrawClass | null;
@@ -44,7 +46,9 @@ interface ToolbarProps {
 const Toolbar: React.FC<ToolbarProps> = ({
   toggle,
   setToggle,
+  handleDrawToolChange,
   brushSize,
+  drawTool,
   handleBrushSizeChange,
   classes,
   selectedClass,
@@ -66,7 +70,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <>
             <div className="space-y-2">
               <Label htmlFor="tool-select">Drawing Tool</Label>
-              <Select defaultValue="brush">
+              <Select
+                defaultValue="brush"
+                onValueChange={handleDrawToolChange}
+                value={drawTool}
+              >
                 <SelectTrigger id="tool-select">
                   <SelectValue placeholder="Select tool" />
                 </SelectTrigger>
@@ -94,7 +102,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="brush-size">Brush Size</Label>
+              <Label htmlFor="brush-size">Stroke Size</Label>
               <Slider
                 id="brush-size"
                 min={1}

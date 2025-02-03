@@ -1,11 +1,13 @@
 import { useToast } from '@/hooks/use-toast';
 import type { DrawClass } from '@/types/DrawClass';
+import { DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { getRandomColor } from '@/utils/getRandomColor';
 import { useCallback, useState } from 'react';
 
 export const useDrawHandlers = () => {
   const [brushSize, setBrushSize] = useState(10);
+  const [drawTool, setDrawTool] = useState<DrawToolsEnum>(DrawToolsEnum.BRUSH);
   const [classes, setClasses] = useState<Map<string, DrawClass>>(new Map());
   const [colorSet, setColorSet] = useState<Set<string>>(new Set());
   const [selectedClass, setSelectedClass] = useState<DrawClass | null>(null);
@@ -17,6 +19,12 @@ export const useDrawHandlers = () => {
 
   const handleBrushSizeChange = (value: number[]) => {
     setBrushSize(value[0]);
+  };
+
+  const handleDrawToolChange = (value: string) => {
+    if (Object.values(DrawToolsEnum).includes(value as DrawToolsEnum)) {
+      setDrawTool(value as DrawToolsEnum);
+    }
   };
 
   const findClassByName = (className: string): DrawClass | null => {
@@ -78,12 +86,14 @@ export const useDrawHandlers = () => {
 
   return {
     brushSize,
+    drawTool,
     classes,
     selectedClass,
     newClassName,
     newClassColor,
     toggle,
     handleBrushSizeChange,
+    handleDrawToolChange,
     findClassByName,
     handleClassSelected,
     handleAddClass,

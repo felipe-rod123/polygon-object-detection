@@ -22,12 +22,14 @@ const DrawPage: React.FC = () => {
   const navigate = useNavigate();
   const {
     brushSize,
+    drawTool,
     classes,
     selectedClass,
     newClassName,
     newClassColor,
     toggle,
     handleBrushSizeChange,
+    handleDrawToolChange,
     handleClassSelected,
     handleAddClass,
     handleDeleteClass,
@@ -80,6 +82,8 @@ const DrawPage: React.FC = () => {
                   <Toolbar
                     toggle={toggle}
                     setToggle={setToggle}
+                    handleDrawToolChange={handleDrawToolChange}
+                    drawTool={drawTool}
                     brushSize={brushSize}
                     handleBrushSizeChange={handleBrushSizeChange}
                     classes={classes}
@@ -108,6 +112,8 @@ const DrawPage: React.FC = () => {
           <Toolbar
             toggle={toggle}
             setToggle={setToggle}
+            handleDrawToolChange={handleDrawToolChange}
+            drawTool={drawTool}
             brushSize={brushSize}
             handleBrushSizeChange={handleBrushSizeChange}
             classes={classes}
@@ -123,6 +129,7 @@ const DrawPage: React.FC = () => {
         </div>
         <DrawCanvas
           canvasMode={toggle}
+          canvasDrawTool={drawTool}
           strokeColor={selectedClass?.color}
           strokeWidth={brushSize}
         />

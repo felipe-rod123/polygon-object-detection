@@ -1,18 +1,28 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { DrawTool, DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
-import { Canvas, PencilBrush, Rect } from 'fabric';
+
+import {
+  ActiveSelection,
+  Canvas,
+  FabricObject,
+  PencilBrush,
+  Rect,
+} from 'fabric';
 import { useEffect, useRef, useState } from 'react';
 
 interface DrawCanvasProps {
   canvasMode: ToolToggleEnum;
+  canvasDrawTool: DrawToolsEnum;
   strokeColor?: string;
   strokeWidth?: number;
 }
 
 const DrawCanvas: React.FC<DrawCanvasProps> = ({
-  canvasMode = ToolToggleEnum.SELECT,
+  canvasMode = ToolToggleEnum.DRAW,
+  canvasDrawTool = DrawToolsEnum.BRUSH,
   strokeColor = '#532ee3',
   strokeWidth = 10,
 }) => {
@@ -21,6 +31,9 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
   const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
 
   const mode = new ToolToggle(canvasMode);
+  const drawTool = new DrawTool(canvasDrawTool);
+
+  let _clipboard: FabricObject | ActiveSelection | null = null;
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
@@ -38,12 +51,34 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
       canvas.setDimensions({ width, height });
       canvas.renderAll();
     };
-
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!fabricCanvas) return;
+
+      switch (event.key) {
+        case 'Delete':
+        case 'Backspace':
+          deleteSelectedObjects();
+          break;
+        case 'c':
+          if (event.ctrlKey) copyObjectsToClipboard();
+          break;
+        case 'v':
+          if (event.ctrlKey) pasteObjectsFromClipboard();
+          break;
+        case 'd':
+          if (event.ctrlKey) duplicateSelectedObjects();
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    // cleanup
     return () => {
       window.removeEventListener('resize', updateCanvasSize);
+      window.removeEventListener('keydown', handleKeyDown);
       canvas.dispose();
     };
   }, []);
@@ -52,11 +87,16 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
     if (!fabricCanvas) return;
 
     if (canvasMode === ToolToggleEnum.DRAW) {
-      freeDraw();
+      if (drawTool.isBrush) {
+        console.log('isBrush');
+        freeDraw();
+      }
+      if (drawTool.isPolygon) console.log('isPolygon');
+      if (drawTool.isEraser) console.log('isEraser');
     } else {
       fabricCanvas.set({ isDrawingMode: false });
     }
-  }, [fabricCanvas, canvasMode, strokeColor, strokeWidth]);
+  }, [fabricCanvas, canvasMode, canvasDrawTool, strokeColor, strokeWidth]);
 
   const freeDraw = () => {
     if (!fabricCanvas || !mode.isDraw) return;
@@ -87,6 +127,63 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
   const clearCanvas = () => {
     if (!fabricCanvas) return;
     fabricCanvas.clear();
+  };
+
+  const copyObjectsToClipboard = () => {
+    if (!fabricCanvas) return;
+
+    const activeObject = fabricCanvas.getActiveObject();
+    if (!activeObject) return;
+
+    activeObject.clone().then(cloned => {
+      _clipboard = cloned;
+    });
+  };
+
+  const pasteObjectsFromClipboard = async () => {
+    if (!fabricCanvas || !_clipboard) return;
+
+    const clonedObj = await _clipboard.clone();
+    fabricCanvas.discardActiveObject();
+
+    clonedObj.set({
+      left: clonedObj.left + 10,
+      top: clonedObj.top + 10,
+      evented: true,
+    });
+
+    if (clonedObj instanceof ActiveSelection) {
+      clonedObj.canvas = fabricCanvas;
+      clonedObj.forEachObject((obj: FabricObject) => {
+        fabricCanvas.add(obj);
+      });
+
+      clonedObj.setCoords();
+    } else {
+      fabricCanvas.add(clonedObj);
+    }
+
+    _clipboard.top += 10;
+    _clipboard.left += 10;
+
+    fabricCanvas.setActiveObject(clonedObj);
+    fabricCanvas.requestRenderAll();
+  };
+
+  const duplicateSelectedObjects = () => {
+    if (!fabricCanvas) return;
+
+    copyObjectsToClipboard();
+    pasteObjectsFromClipboard();
+  };
+
+  const deleteSelectedObjects = () => {
+    if (!fabricCanvas) return;
+
+    const activeObject = fabricCanvas.getActiveObject();
+    if (activeObject) {
+      fabricCanvas.remove(activeObject);
+    }
   };
 
   return (

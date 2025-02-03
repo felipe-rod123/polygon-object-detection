@@ -18,7 +18,7 @@ const acceptedFileTypes = ['application/pdf', 'image/png', 'image/jpeg'];
 const FileUploadModalButton = forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
->((props, ref) => {
+>((_props, ref) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
