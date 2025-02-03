@@ -8,6 +8,7 @@ export default function CanvasDrawing() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
   const [mode, setMode] = useState<DrawingMode>('brush');
+  const [canUndo, setCanUndo] = useState(false);
 
   // Initialize canvas
   useEffect(() => {
@@ -25,7 +26,11 @@ export default function CanvasDrawing() {
     canvas.on('path:created', ({ path }) => {
       path.erasable = true;
       canvas.renderAll();
+      updateUndoState();
     });
+
+    // Listen for object modifications
+    canvas.on('object:modified', updateUndoState);
 
     // Initialize brushes
     const pencilBrush = new fabric.PencilBrush(canvas);
@@ -38,6 +43,14 @@ export default function CanvasDrawing() {
     return () => {
       canvas.dispose();
     };
+  }, []);
+
+  // Update undo state
+  const updateUndoState = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (canvas) {
+      setCanUndo(canvas._objects.length > 0);
+    }
   }, []);
 
   // Handle mode changes
@@ -58,10 +71,11 @@ export default function CanvasDrawing() {
       canvas.on('path:created', ({ path }) => {
         path.erasable = true;
         canvas.renderAll();
+        updateUndoState();
       });
     } else if (mode === 'eraser') {
       const eraserBrush = new EraserBrush(canvas);
-      eraserBrush.width = 30; // increased from 20 to 30 for better visibility
+      eraserBrush.width = 30;
       canvas.freeDrawingBrush = eraserBrush;
     }
 
@@ -117,9 +131,10 @@ export default function CanvasDrawing() {
       canvas.on('mouse:up', () => {
         isDrawing = false;
         rect = null;
+        updateUndoState();
       });
     }
-  }, [mode]);
+  }, [mode, updateUndoState]);
 
   // Clear canvas handler
   const handleClear = useCallback(() => {
@@ -128,7 +143,20 @@ export default function CanvasDrawing() {
     canvas.clear();
     canvas.backgroundColor = '#ffffff';
     canvas.renderAll();
-  }, []);
+    updateUndoState();
+  }, [updateUndoState]);
+
+  // Undo handler
+  const handleUndo = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const objects = canvas._objects;
+    if (objects.length > 0) {
+      canvas.remove(objects[objects.length - 1]);
+      canvas.renderAll();
+      updateUndoState();
+    }
+  }, [updateUndoState]);
 
   return (
     <div className="canvas-container">
@@ -161,6 +189,9 @@ export default function CanvasDrawing() {
           Rectangle
         </button>
         <button onClick={handleClear}>Clear Canvas</button>
+        <button onClick={handleUndo} disabled={!canUndo}>
+          Undo
+        </button>
       </div>
       <canvas ref={canvasRef} />
     </div>
