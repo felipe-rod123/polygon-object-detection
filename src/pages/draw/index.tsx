@@ -15,7 +15,7 @@ import { ArrowLeft, Box, Menu } from 'lucide-react';
 import type React from 'react';
 import { useNavigate } from 'react-router';
 import ButtonAlertDialog from '../../components/button-alert-dialog';
-import Canvas from './Canvas';
+import Canvas from './DrawCanvas';
 import Toolbar from './Toolbar';
 
 const DrawPage: React.FC = () => {
