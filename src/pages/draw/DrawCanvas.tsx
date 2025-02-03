@@ -1,114 +1,168 @@
-import { Button } from '@/components/ui/button';
-import { DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
-import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import { EraserBrush } from '@erase2d/fabric';
+import * as fabric from 'fabric';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Canvas, PencilBrush } from 'fabric';
-import { useEffect, useRef, useState } from 'react';
+type DrawingMode = 'brush' | 'eraser' | 'polygon';
 
-interface DrawCanvasProps {
-  canvasMode: ToolToggleEnum;
-  canvasDrawTool: DrawToolsEnum;
-  strokeColor?: string;
-  strokeWidth?: number;
-}
-
-const DrawCanvas: React.FC<DrawCanvasProps> = ({
-  canvasMode = ToolToggleEnum.DRAW,
-  canvasDrawTool = DrawToolsEnum.BRUSH,
-  strokeColor = '#532ee3',
-  strokeWidth = 10,
-}) => {
+export default function CanvasDrawing() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
+  const fabricRef = useRef<fabric.Canvas | null>(null);
+  const [mode, setMode] = useState<DrawingMode>('brush');
 
+  // Initialize canvas
   useEffect(() => {
-    if (!canvasRef.current || !containerRef.current) return;
+    if (!canvasRef.current) return;
 
-    const canvas = new Canvas(canvasRef.current, {
-      backgroundColor: 'transparent', // dark mode compatible
-      selection: true,
+    const canvas = new fabric.Canvas(canvasRef.current, {
+      width: 800,
+      height: 600,
+      backgroundColor: '#ffffff',
     });
 
-    setFabricCanvas(canvas);
+    fabricRef.current = canvas;
 
-    const updateCanvasSize = () => {
-      if (!containerRef.current) return;
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      canvas.setDimensions({ width, height });
+    // Make sure all drawn paths are erasable
+    canvas.on('path:created', ({ path }) => {
+      path.erasable = true;
       canvas.renderAll();
-    };
-    updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
+    });
+
+    // Initialize brushes
+    const pencilBrush = new fabric.PencilBrush(canvas);
+    pencilBrush.width = 5;
+    pencilBrush.color = '#000000';
+
+    const eraserBrush = new EraserBrush(canvas);
+    eraserBrush.width = 20;
 
     return () => {
-      window.removeEventListener('resize', updateCanvasSize);
       canvas.dispose();
     };
   }, []);
 
+  // Handle mode changes
   useEffect(() => {
-    if (!fabricCanvas) return;
+    const canvas = fabricRef.current;
+    if (!canvas) return;
 
-    const updateDrawingMode = () => {
-      if (canvasMode === ToolToggleEnum.DRAW) {
-        fabricCanvas.isDrawingMode = true;
+    canvas.isDrawingMode = mode !== 'polygon';
 
-        switch (canvasDrawTool) {
-          case DrawToolsEnum.BRUSH:
-            brushDraw();
-            break;
-          case DrawToolsEnum.POLYGON:
-            polygonDraw();
-            break;
-          case DrawToolsEnum.ERASER:
-            eraserBrushDraw();
-            break;
-          default:
-            brushDraw();
-            break;
-        }
-      } else {
-        fabricCanvas.isDrawingMode = false;
-      }
-    };
+    if (mode === 'brush') {
+      const pencilBrush = new fabric.PencilBrush(canvas);
+      pencilBrush.width = 5;
+      pencilBrush.color = '#000000';
+      canvas.freeDrawingBrush = pencilBrush;
 
-    updateDrawingMode();
-  }, [fabricCanvas, canvasMode, canvasDrawTool, strokeColor, strokeWidth]);
+      // Ensure any new paths created are erasable
+      canvas.off('path:created');
+      canvas.on('path:created', ({ path }) => {
+        path.erasable = true;
+        canvas.renderAll();
+      });
+    } else if (mode === 'eraser') {
+      const eraserBrush = new EraserBrush(canvas);
+      eraserBrush.width = 30; // increased from 20 to 30 for better visibility
+      canvas.freeDrawingBrush = eraserBrush;
+    }
 
-  const brushDraw = () => {
-    if (!fabricCanvas) return;
-    fabricCanvas.isDrawingMode = true;
+    // Remove polygon mode listeners when switching to other modes
+    canvas.off('mouse:down');
+    canvas.off('mouse:move');
+    canvas.off('mouse:up');
 
-    const brush = new PencilBrush(fabricCanvas);
-    brush.color = strokeColor;
-    brush.width = strokeWidth;
-    fabricCanvas.freeDrawingBrush = brush;
-  };
+    // Set up polygon (rectangle) mode
+    if (mode === 'polygon') {
+      let isDrawing = false;
+      let startX = 0;
+      let startY = 0;
+      let rect: fabric.Rect | null = null;
 
-  const eraserBrushDraw = () => {};
+      canvas.on('mouse:down', options => {
+        isDrawing = true;
+        const pointer = canvas.getPointer(options.e);
+        startX = pointer.x;
+        startY = pointer.y;
 
-  const polygonDraw = () => {
-    if (!fabricCanvas) return;
-    // TODO: implement
-  };
+        rect = new fabric.Rect({
+          left: startX,
+          top: startY,
+          width: 0,
+          height: 0,
+          fill: 'transparent',
+          stroke: '#000000',
+          strokeWidth: 2,
+          erasable: true,
+        });
 
-  const clearCanvas = () => {
-    if (!fabricCanvas) return;
-    fabricCanvas.clear();
-  };
+        canvas.add(rect);
+      });
+
+      canvas.on('mouse:move', options => {
+        if (!isDrawing || !rect) return;
+
+        const pointer = canvas.getPointer(options.e);
+        const width = pointer.x - startX;
+        const height = pointer.y - startY;
+
+        rect.set({
+          width: Math.abs(width),
+          height: Math.abs(height),
+          left: width > 0 ? startX : pointer.x,
+          top: height > 0 ? startY : pointer.y,
+        });
+
+        canvas.renderAll();
+      });
+
+      canvas.on('mouse:up', () => {
+        isDrawing = false;
+        rect = null;
+      });
+    }
+  }, [mode]);
+
+  // Clear canvas handler
+  const handleClear = useCallback(() => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    canvas.clear();
+    canvas.backgroundColor = '#ffffff';
+    canvas.renderAll();
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden"
-    >
-      <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
-      <div className="absolute top-4 left-4 flex gap-2">
-        <Button onClick={clearCanvas}>Clear canvas</Button>
+    <div className="canvas-container">
+      <div className="toolbar" style={{ marginBottom: '1rem' }}>
+        <button
+          onClick={() => setMode('brush')}
+          style={{
+            backgroundColor: mode === 'brush' ? '#007bff' : '#ffffff',
+            color: mode === 'brush' ? '#ffffff' : '#000000',
+          }}
+        >
+          Brush
+        </button>
+        <button
+          onClick={() => setMode('eraser')}
+          style={{
+            backgroundColor: mode === 'eraser' ? '#007bff' : '#ffffff',
+            color: mode === 'eraser' ? '#ffffff' : '#000000',
+          }}
+        >
+          Eraser
+        </button>
+        <button
+          onClick={() => setMode('polygon')}
+          style={{
+            backgroundColor: mode === 'polygon' ? '#007bff' : '#ffffff',
+            color: mode === 'polygon' ? '#ffffff' : '#000000',
+          }}
+        >
+          Rectangle
+        </button>
+        <button onClick={handleClear}>Clear Canvas</button>
       </div>
+      <canvas ref={canvasRef} />
     </div>
   );
-};
-
-export default DrawCanvas;
+}
