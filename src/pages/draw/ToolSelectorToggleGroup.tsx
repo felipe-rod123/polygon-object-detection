@@ -5,9 +5,10 @@ import {
   SquareDashedMousePointer,
   Upload,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { ReactElement, useState } from 'react';
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 
 import {
   Tooltip,
@@ -16,21 +17,55 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+interface toolToogleConfigs {
+  value: ToolToggleEnum;
+  ariaLabel: string;
+  icon: ReactElement;
+}
+
+const toolToggleGroup: toolToogleConfigs[] = [
+  {
+    value: ToolToggleEnum.DRAW,
+    ariaLabel: 'Toggle drawing',
+    icon: <Pen className="h-4 w-4" />,
+  },
+  {
+    value: ToolToggleEnum.PAN,
+    ariaLabel: 'Toggle mouse pan',
+    icon: <Hand className="h-4 w-4" />,
+  },
+  {
+    value: ToolToggleEnum.ROTATION,
+    ariaLabel: 'Toggle rotation',
+    icon: <Rotate3D className="h-4 w-4" />,
+  },
+  {
+    value: ToolToggleEnum.SELECT,
+    ariaLabel: 'Toggle selection',
+    icon: <SquareDashedMousePointer className="h-4 w-4" />,
+  },
+  {
+    value: ToolToggleEnum.IMPORT,
+    ariaLabel: 'Import file',
+    icon: <Upload className="h-4 w-4" />,
+  },
+];
+
 export default function ToolSelectorToggleGroup({
   setToggle,
 }: {
-  setToggle: React.Dispatch<React.SetStateAction<string>>;
+  setToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
 }) {
-  const [toggleState, setToggleState] = useState<string>('draw');
+  const [toggleState, setToggleState] = useState<ToolToggleEnum>(
+    ToolToggleEnum.DRAW,
+  );
 
-  const handleToggleChange = (value: string) => {
+  const handleToggleChange = (value: ToolToggleEnum) => {
     if (value) {
       setToggleState(value);
       setToggle(value);
     }
   };
-
-  // TODO: Refactor this code and write using Enums and Object Literals
 
   return (
     <TooltipProvider>
@@ -40,85 +75,23 @@ export default function ToolSelectorToggleGroup({
         onValueChange={handleToggleChange}
         value={toggleState}
       >
-        <Tooltip>
-          <TooltipTrigger>
-            <ToggleGroupItem
-              className="data-[state=on]:bg-main-400 dark:data-[state=on]:bg-main-600"
-              asChild
-              value="draw"
-              aria-label="Toggle drawing"
-            >
-              <Pen className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Drawing</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger>
-            <ToggleGroupItem
-              className="data-[state=on]:bg-main-400 dark:data-[state=on]:bg-main-600"
-              asChild
-              value="pan"
-              aria-label="Toggle mouse pan"
-            >
-              <Hand className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Mouse pan</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger>
-            <ToggleGroupItem
-              className="data-[state=on]:bg-main-400 dark:data-[state=on]:bg-main-600"
-              asChild
-              value="rotation"
-              aria-label="Toggle rotation"
-            >
-              <Rotate3D className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Rotation</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger>
-            <ToggleGroupItem
-              className="data-[state=on]:bg-main-400 dark:data-[state=on]:bg-main-600"
-              asChild
-              value="select"
-              aria-label="Toggle selection"
-            >
-              <SquareDashedMousePointer className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Selection</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger>
-            <ToggleGroupItem
-              className="data-[state=on]:bg-main-400 dark:data-[state=on]:bg-main-600"
-              asChild
-              value="import"
-              aria-label="Import file"
-            >
-              <Upload className="h-4 w-4" />
-            </ToggleGroupItem>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Import file</p>
-          </TooltipContent>
-        </Tooltip>
+        {toolToggleGroup.map(tool => (
+          <Tooltip key={tool.value}>
+            <TooltipTrigger>
+              <ToggleGroupItem
+                className="data-[state=on]:bg-main-400 dark:data-[state=on]:bg-main-600"
+                asChild
+                value={tool.value}
+                aria-label={tool.ariaLabel}
+              >
+                {tool.icon}
+              </ToggleGroupItem>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{tool.ariaLabel}</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
       </ToggleGroup>
     </TooltipProvider>
   );

@@ -1,3 +1,4 @@
+import ButtonAlertDialog from '@/components/button-alert-dialog';
 import ColorPicker from '@/components/color-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import type { DrawClass } from '@/types/DrawClass';
+import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import {
   Brush,
   Download,
@@ -21,12 +23,11 @@ import {
   X,
 } from 'lucide-react';
 import type React from 'react';
-import ButtonAlertDialog from '../../components/button-alert-dialog';
 import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
 
 interface ToolbarProps {
   toggle: string;
-  setToggle: React.Dispatch<React.SetStateAction<string>>;
+  setToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
   brushSize: number;
   handleBrushSizeChange: (value: number[]) => void;
   classes: Map<string, DrawClass>;

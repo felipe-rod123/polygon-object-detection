@@ -1,3 +1,4 @@
+import ButtonAlertDialog from '@/components/button-alert-dialog';
 import ThemeSwitchButton from '@/components/theme-switch-button';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,7 +15,6 @@ import { useDrawHandlers } from '@/utils/drawHandlers';
 import { ArrowLeft, Box, Menu } from 'lucide-react';
 import type React from 'react';
 import { useNavigate } from 'react-router';
-import ButtonAlertDialog from '../../components/button-alert-dialog';
 import DrawCanvas from './DrawCanvas';
 import Toolbar from './Toolbar';
 

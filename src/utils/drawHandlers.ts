@@ -1,5 +1,6 @@
 import { useToast } from '@/hooks/use-toast';
 import type { DrawClass } from '@/types/DrawClass';
+import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { getRandomColor } from '@/utils/getRandomColor';
 import { useCallback, useState } from 'react';
 
@@ -10,7 +11,7 @@ export const useDrawHandlers = () => {
   const [selectedClass, setSelectedClass] = useState<DrawClass | null>(null);
   const [newClassName, setNewClassName] = useState('');
   const [newClassColor, setNewClassColor] = useState(getRandomColor());
-  const [toggle, setToggle] = useState('draw');
+  const [toggle, setToggle] = useState<ToolToggleEnum>(ToolToggleEnum.DRAW);
 
   const { toast } = useToast();
 

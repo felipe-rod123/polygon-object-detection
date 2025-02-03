@@ -74,13 +74,18 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
     fabricCanvas.renderAll();
   };
 
+  const clearCanvas = () => {
+    // TODO: implement
+  }
+
   return (
     <div
       ref={containerRef}
       className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden"
     >
       <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
-      <div className="absolute bottom-4 left-4 flex gap-2">
+      <div className="absolute top-4 left-4 flex gap-2">
+        <Button onClick={clearCanvas}>Clear canvas</Button>
         <Button onClick={addRectangle}>Add Rectangle</Button>
       </div>
     </div>
