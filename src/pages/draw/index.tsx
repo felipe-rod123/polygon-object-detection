@@ -15,7 +15,7 @@ import { ArrowLeft, Box, Menu } from 'lucide-react';
 import type React from 'react';
 import { useNavigate } from 'react-router';
 import ButtonAlertDialog from '../../components/button-alert-dialog';
-import Canvas from './DrawCanvas';
+import DrawCanvas from './DrawCanvas';
 import Toolbar from './Toolbar';
 
 const DrawPage: React.FC = () => {
@@ -121,7 +121,11 @@ const DrawPage: React.FC = () => {
             handleAddClass={handleAddClass}
           />
         </div>
-        <Canvas />
+        <DrawCanvas
+          isFreeDrawing={true}
+          strokeColor="#ff0000"
+          strokeWidth={50}
+        />
       </main>
       <Toaster />
     </div>

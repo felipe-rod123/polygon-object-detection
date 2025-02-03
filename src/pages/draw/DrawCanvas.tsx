@@ -1,8 +1,20 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
-import { Canvas, Rect } from 'fabric';
+import { Canvas, PencilBrush, Rect } from 'fabric';
 import { useEffect, useRef, useState } from 'react';
 
-const CanvasComponent = () => {
+interface DrawCanvasProps {
+  isFreeDrawing?: boolean;
+  strokeColor?: string;
+  strokeWidth?: number;
+}
+
+const DrawCanvas: React.FC<DrawCanvasProps> = ({
+  isFreeDrawing = true,
+  strokeColor = '#3b82f6',
+  strokeWidth = 2,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
@@ -20,29 +32,32 @@ const CanvasComponent = () => {
     const updateCanvasSize = () => {
       if (!containerRef.current) return;
       const { width, height } = containerRef.current.getBoundingClientRect();
-
-      canvas.setDimensions({
-        width,
-        height,
-      });
-
+      canvas.setDimensions({ width, height });
       canvas.renderAll();
     };
 
-    // set initial size
     updateCanvasSize();
-
-    // Resize listener
-    const handleResize = () => {
-      updateCanvasSize();
-    };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', updateCanvasSize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', updateCanvasSize);
       canvas.dispose();
     };
   }, []);
+
+  // Enable/disable free drawing
+  useEffect(() => {
+    if (!fabricCanvas) return;
+
+    fabricCanvas.set({ isDrawingMode: isFreeDrawing });
+
+    if (isFreeDrawing) {
+      const brush = new PencilBrush(fabricCanvas);
+      brush.color = strokeColor;
+      brush.width = strokeWidth;
+      fabricCanvas.set({ freeDrawingBrush: brush });
+    }
+  }, [fabricCanvas, isFreeDrawing, strokeColor, strokeWidth]);
 
   const addRectangle = () => {
     if (!fabricCanvas) return;
@@ -50,7 +65,7 @@ const CanvasComponent = () => {
     const rect = new Rect({
       left: 50,
       top: 50,
-      fill: '#3b82f6',
+      fill: strokeColor,
       width: 100,
       height: 100,
     });
@@ -65,11 +80,11 @@ const CanvasComponent = () => {
       className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden"
     >
       <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
-      <div className="absolute bottom-4 left-4">
+      <div className="absolute bottom-4 left-4 flex gap-2">
         <Button onClick={addRectangle}>Add Rectangle</Button>
       </div>
     </div>
   );
 };
 
-export default CanvasComponent;
+export default DrawCanvas;
