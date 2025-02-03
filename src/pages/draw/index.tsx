@@ -122,9 +122,9 @@ const DrawPage: React.FC = () => {
           />
         </div>
         <DrawCanvas
-          isFreeDrawing={true}
-          strokeColor="#ff0000"
-          strokeWidth={50}
+          canvasMode={toggle}
+          strokeColor={selectedClass?.color}
+          strokeWidth={brushSize}
         />
       </main>
       <Toaster />

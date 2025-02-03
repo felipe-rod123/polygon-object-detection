@@ -1,23 +1,26 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { ToolToggle, ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { Canvas, PencilBrush, Rect } from 'fabric';
 import { useEffect, useRef, useState } from 'react';
 
 interface DrawCanvasProps {
-  isFreeDrawing?: boolean;
+  canvasMode: ToolToggleEnum;
   strokeColor?: string;
   strokeWidth?: number;
 }
 
 const DrawCanvas: React.FC<DrawCanvasProps> = ({
-  isFreeDrawing = true,
-  strokeColor = '#3b82f6',
-  strokeWidth = 2,
+  canvasMode = ToolToggleEnum.SELECT,
+  strokeColor = '#532ee3',
+  strokeWidth = 10,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<Canvas | null>(null);
+
+  const mode = new ToolToggle(canvasMode);
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
@@ -49,15 +52,15 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
   useEffect(() => {
     if (!fabricCanvas) return;
 
-    fabricCanvas.set({ isDrawingMode: isFreeDrawing });
+    fabricCanvas.set({ isDrawingMode: mode.isDraw });
 
-    if (isFreeDrawing) {
+    if (mode.isDraw) {
       const brush = new PencilBrush(fabricCanvas);
       brush.color = strokeColor;
       brush.width = strokeWidth;
       fabricCanvas.set({ freeDrawingBrush: brush });
     }
-  }, [fabricCanvas, isFreeDrawing, strokeColor, strokeWidth]);
+  }, [fabricCanvas, mode, strokeColor, strokeWidth]);
 
   const addRectangle = () => {
     if (!fabricCanvas) return;
@@ -75,8 +78,9 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
   };
 
   const clearCanvas = () => {
-    // TODO: implement
-  }
+    if (!fabricCanvas) return;
+    fabricCanvas.clear();
+  };
 
   return (
     <div
