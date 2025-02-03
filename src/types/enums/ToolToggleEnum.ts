@@ -1,9 +1,7 @@
 export enum ToolToggleEnum {
   DRAW = 'draw',
   PAN = 'pan',
-  ROTATION = 'rotation',
   SELECT = 'select',
-  IMPORT = 'import',
 }
 
 export class ToolToggle {
@@ -17,15 +15,7 @@ export class ToolToggle {
     return this.tool === ToolToggleEnum.PAN;
   }
 
-  get isRotation(): boolean {
-    return this.tool === ToolToggleEnum.ROTATION;
-  }
-
   get isSelect(): boolean {
     return this.tool === ToolToggleEnum.SELECT;
-  }
-
-  get isImport(): boolean {
-    return this.tool === ToolToggleEnum.IMPORT;
   }
 }

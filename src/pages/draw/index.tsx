@@ -58,44 +58,44 @@ const DrawPage: React.FC = () => {
               }}
             />
             <ThemeSwitchButton />
-          </div>
 
-          {/* MOBILE RESPONSIVE SIDEBAR LAYOUT */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-[300px] sm:w-[400px] bg-zinc-50 dark:bg-zinc-800"
-            >
-              <SheetHeader>
-                <SheetTitle>Drawing Tools</SheetTitle>
-                <SheetDescription>
-                  Adjust your drawing settings here.
-                </SheetDescription>
-              </SheetHeader>
-              <div className="py-4 space-y-4">
-                <Toolbar
-                  toggle={toggle}
-                  setToggle={setToggle}
-                  brushSize={brushSize}
-                  handleBrushSizeChange={handleBrushSizeChange}
-                  classes={classes}
-                  selectedClass={selectedClass}
-                  handleClassSelected={handleClassSelected}
-                  handleDeleteClass={handleDeleteClass}
-                  newClassName={newClassName}
-                  setNewClassName={setNewClassName}
-                  newClassColor={newClassColor}
-                  setNewClassColor={setNewClassColor}
-                  handleAddClass={handleAddClass}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
+            {/* MOBILE RESPONSIVE SIDEBAR LAYOUT */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-[300px] sm:w-[400px] bg-zinc-50 dark:bg-zinc-800"
+              >
+                <SheetHeader>
+                  <SheetTitle>Drawing Tools</SheetTitle>
+                  <SheetDescription>
+                    Adjust your drawing settings here.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="py-4 space-y-4">
+                  <Toolbar
+                    toggle={toggle}
+                    setToggle={setToggle}
+                    brushSize={brushSize}
+                    handleBrushSizeChange={handleBrushSizeChange}
+                    classes={classes}
+                    selectedClass={selectedClass}
+                    handleClassSelected={handleClassSelected}
+                    handleDeleteClass={handleDeleteClass}
+                    newClassName={newClassName}
+                    setNewClassName={setNewClassName}
+                    newClassColor={newClassColor}
+                    setNewClassColor={setNewClassColor}
+                    handleAddClass={handleAddClass}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </ScrollArea>
       </header>
 
