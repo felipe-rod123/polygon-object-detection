@@ -5,9 +5,6 @@ import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { Canvas, PencilBrush } from 'fabric';
 import { useEffect, useRef, useState } from 'react';
 
-import { EraserBrush } from '@erase2d/fabric';
-
-
 interface DrawCanvasProps {
   canvasMode: ToolToggleEnum;
   canvasDrawTool: DrawToolsEnum;
@@ -55,7 +52,7 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
 
     const updateDrawingMode = () => {
       if (canvasMode === ToolToggleEnum.DRAW) {
-        fabricCanvas.set({ isDrawingMode: true });
+        fabricCanvas.isDrawingMode = true;
 
         switch (canvasDrawTool) {
           case DrawToolsEnum.BRUSH:
@@ -72,7 +69,7 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
             break;
         }
       } else {
-        fabricCanvas.set({ isDrawingMode: false });
+        fabricCanvas.isDrawingMode = false;
       }
     };
 
@@ -81,34 +78,19 @@ const DrawCanvas: React.FC<DrawCanvasProps> = ({
 
   const brushDraw = () => {
     if (!fabricCanvas) return;
-    fabricCanvas.set({ isDrawingMode: true });
-
-    console.log('brush');
+    fabricCanvas.isDrawingMode = true;
 
     const brush = new PencilBrush(fabricCanvas);
     brush.color = strokeColor;
     brush.width = strokeWidth;
-    fabricCanvas.set({ freeDrawingBrush: brush });
+    fabricCanvas.freeDrawingBrush = brush;
   };
 
-  //FIXME:
-  const eraserBrushDraw = () => {
-    if (!fabricCanvas) return;
+  const eraserBrushDraw = () => {};
 
-    console.log('eraser');
-
-    const eraser = new EraserBrush(fabricCanvas);
-    eraser.width = 30;
-
-    fabricCanvas.freeDrawingBrush = eraser;
-    fabricCanvas.isDrawingMode = true;
-  };
-
-  //FIXME:
   const polygonDraw = () => {
     if (!fabricCanvas) return;
-
-    console.log('polygon');
+    // TODO: implement
   };
 
   const clearCanvas = () => {
