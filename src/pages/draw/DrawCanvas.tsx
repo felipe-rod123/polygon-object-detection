@@ -14,8 +14,6 @@ interface CanvasDrawingProps {
   setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
   strokeColor: string;
   strokeWidth: number;
-  handleExportSVG: () => void;
-  handleExportCOCO: () => void;
 }
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
@@ -41,6 +39,8 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent', // dark mode compatible
+      uniformScaling: true,
+      uniScaleKey: 'shiftKey',
     });
 
     fabricRef.current = canvas;
@@ -54,9 +54,21 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
 
+    /**
+     * `perPixelTargetFind`
+     * By default, all Fabric objects on canvas can be dragged by the bounding box. However, in order to click/drag objects only by its actual contents, we need to set “perPixelTargetFind” as true.
+     *
+     * `noScaleCache`
+     * During the scaling transformation the object is not regenerated.
+     */
+
     // make sure all drawn paths are erasable
+
     canvas.on('path:created', ({ path }) => {
       path.erasable = true;
+      path.perPixelTargetFind = true;
+      path.objectCaching = true;
+      path.noScaleCache = true;
       canvas.renderAll();
       updateUndoState();
     });
@@ -100,6 +112,9 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         canvas.off('path:created' as any);
         canvas.on('path:created', ({ path }) => {
           path.erasable = true;
+          path.perPixelTargetFind = true;
+          path.objectCaching = true;
+          path.noScaleCache = true;
           canvas.renderAll();
           updateUndoState();
         });
@@ -131,6 +146,11 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       canvas.forEachObject(obj => {
         obj.selectable = true;
         obj.evented = true;
+        obj.objectCaching = true;
+        obj.noScaleCache = true;
+        if (!(obj instanceof fabric.Rect)) {
+          obj.perPixelTargetFind = true;
+        }
       });
     }
   }, [mode, drawTool, strokeColor, strokeWidth, updateUndoState]);
@@ -169,6 +189,8 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
                 stroke: 'blue',
                 strokeWidth: 2,
                 erasable: true,
+                objectCaching: true,
+                noScaleCache: true,
               });
               canvas.add(polygonRef.current);
             } else {
@@ -186,7 +208,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   }, [mode, drawTool, updateUndoState]);
 
   const handleExportSVG = useCallback(() => {
-    console.log('SVG Export clicked');
     const canvas = fabricRef.current;
     if (!canvas) return;
 
@@ -196,7 +217,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   }, []);
 
   const handleExportCOCO = useCallback(() => {
-    console.log('COCO Export clicked');
     const canvas = fabricRef.current;
     if (!canvas) return;
 
@@ -260,7 +280,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   }, []);
 
   const handleExportPNG = useCallback(() => {
-    console.log('PNG Export clicked');
     const canvas = fabricRef.current;
     if (!canvas) return;
 
@@ -318,6 +337,8 @@ const setupRectangleDrawing = (
       stroke: strokeColor,
       strokeWidth: strokeWidth,
       erasable: true,
+      objectCaching: true,
+      noScaleCache: true,
     });
 
     canvas.add(rect);
@@ -378,6 +399,8 @@ const setupPolygonDrawing = (
         originX: 'center',
         originY: 'center',
         erasable: true,
+        objectCaching: true,
+        noScaleCache: true,
       });
       canvas.add(firstPoint);
       pointsRef.current.push(firstPoint);
@@ -400,6 +423,8 @@ const setupPolygonDrawing = (
           stroke: strokeColor,
           strokeWidth: 2,
           erasable: true,
+          objectCaching: true,
+          noScaleCache: true,
         });
 
         canvas.remove(...pointsRef.current);
@@ -421,6 +446,8 @@ const setupPolygonDrawing = (
           originX: 'center',
           originY: 'center',
           erasable: true,
+          objectCaching: true,
+          noScaleCache: true,
         });
         canvas.add(newPoint);
         pointsRef.current.push(newPoint);
@@ -440,6 +467,8 @@ const setupPolygonDrawing = (
           stroke: 'blue',
           strokeWidth: 2,
           erasable: true,
+          objectCaching: true,
+          noScaleCache: true,
         });
 
         canvas.add(polygonRef.current);

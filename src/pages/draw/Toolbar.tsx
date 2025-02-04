@@ -41,8 +41,6 @@ interface ToolbarProps {
   newClassColor: string;
   setNewClassColor: (color: string) => void;
   handleAddClass: () => void;
-  handleExportSVG: () => void;
-  handleExportCOCO: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -61,8 +59,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
   newClassColor,
   setNewClassColor,
   handleAddClass,
-  handleExportSVG,
-  handleExportCOCO,
 }) => {
   return (
     <>
@@ -198,14 +194,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <Button
             className="w-full"
             variant="outline"
-            onClick={handleExportCOCO}
+            onClick={() => console.log('Exported COCO file')} // FIXME
           >
             <Download className="mr-2 h-4 w-4" /> Export COCO
           </Button>
           <Button
             className="w-full"
             variant="outline"
-            onClick={handleExportSVG}
+            onClick={() => console.log('Exported SVG file')} // FIXME
           >
             <Image className="mr-2 h-4 w-4" /> Save as SVG
           </Button>

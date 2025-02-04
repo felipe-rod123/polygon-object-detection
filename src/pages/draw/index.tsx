@@ -17,7 +17,6 @@ import type React from 'react';
 import { useNavigate } from 'react-router';
 import CanvasDrawing from './DrawCanvas';
 import Toolbar from './Toolbar';
-import { useCallback } from 'react';
 
 const DrawPage: React.FC = () => {
   const navigate = useNavigate();
@@ -38,14 +37,6 @@ const DrawPage: React.FC = () => {
     setNewClassColor,
     setToggle,
   } = useDrawHandlers();
-
-  const handleExportSVG = useCallback(() => {
-    // This function will be implemented in CanvasDrawing
-  }, []);
-
-  const handleExportCOCO = useCallback(() => {
-    // This function will be implemented in CanvasDrawing
-  }, []);
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
@@ -104,8 +95,6 @@ const DrawPage: React.FC = () => {
                     newClassColor={newClassColor}
                     setNewClassColor={setNewClassColor}
                     handleAddClass={handleAddClass}
-                    handleExportSVG={handleExportSVG}
-                    handleExportCOCO={handleExportCOCO}
                   />
                 </div>
               </SheetContent>
@@ -136,8 +125,6 @@ const DrawPage: React.FC = () => {
             newClassColor={newClassColor}
             setNewClassColor={setNewClassColor}
             handleAddClass={handleAddClass}
-            handleExportSVG={handleExportSVG}
-            handleExportCOCO={handleExportCOCO}
           />
         </div>
         <CanvasDrawing
@@ -146,8 +133,6 @@ const DrawPage: React.FC = () => {
           setCanvasToggle={setToggle}
           strokeColor={selectedClass?.color ?? '#532ee3'}
           strokeWidth={brushSize}
-          handleExportSVG={handleExportSVG}
-          handleExportCOCO={handleExportCOCO}
         />
       </main>
       <Toaster />
