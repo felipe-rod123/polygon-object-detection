@@ -75,6 +75,17 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
     // listen for object modifications
     canvas.on('object:modified', updateUndoState);
+    // basic zoom control, limited between 1% and 2000%
+    canvas.on('mouse:wheel', function (opt) {
+      var delta = opt.e.deltaY;
+      var zoom = canvas.getZoom();
+      zoom *= 0.999 ** delta;
+      if (zoom > 20) zoom = 20;
+      if (zoom < 0.01) zoom = 0.01;
+      canvas.setZoom(zoom);
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
+    });
 
     // cleanup
     return () => {
