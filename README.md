@@ -38,8 +38,6 @@ Before setting up the project, ensure you have the following installed:
 
 - **Node.js** (version 14 or higher)
 - **npm** (version 6 or higher)
-- **Flask** v2.3.3
-- **pydantic** v1.10.11
 
 ### Setup and Run 🚀
 
@@ -63,6 +61,86 @@ npm i && npm run dev
 
 ```sh
 npm run format
+```
+
+### Use a Virtual Environment to Test the API (api.py) 🧪
+
+To test the API using a virtual environment, follow these steps:
+
+#### Requirements
+
+- **Flask** v2.3.3
+- **pydantic** v1.10.11
+
+#### Steps
+
+1. **Create a virtual environment:**
+
+```sh
+python3 -m venv venv
+```
+
+2. **Activate the virtual environment:**
+
+- On Linux/macOS:
+
+  ```sh
+  source venv/bin/activate
+  ```
+
+- On Windows:
+
+  ```sh
+  venv\Scripts\activate
+  ```
+
+3. **Install dependencies inside the virtual environment:**
+
+```sh
+pip install Flask==2.3.3 pydantic==1.10.11
+```
+
+4. **Run the API:**
+
+```sh
+python api.py
+```
+
+5. **Test the API using Postman:**
+
+- Open **Postman** and create a new POST request.
+- Enter the URL: `http://localhost:5002/validate`
+- Go to the _Body_ tab, select _raw_, and set the type to _JSON_.
+- Paste the COCO JSON data and click _Send_.
+
+#### Success Response
+
+If the request is valid, you should receive a `200` response with:
+
+```json
+{ "message": "Success" }
+```
+
+#### Error Response
+
+If there is an error in the request body, you might receive a `422 UNPROCESSABLE ENTITY` response with details about the validation errors. For example:
+
+```json
+{
+  "details": [
+    {
+      "loc": ["categories", 0, "id"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    },
+    {
+      "loc": ["categories", 0, "name"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ],
+  "error": "Validation error"
+}
 ```
 
 ### Contributing 🤝
