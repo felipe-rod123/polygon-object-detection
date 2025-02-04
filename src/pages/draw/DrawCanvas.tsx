@@ -1,10 +1,22 @@
 import { EraserBrush } from '@erase2d/fabric';
-import * as fabric from 'fabric';
 import { saveAs } from 'file-saver';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import {
+  Canvas,
+  Circle,
+  CircleProps,
+  Color,
+  FabricImage,
+  ObjectEvents,
+  PencilBrush,
+  Point,
+  Polygon,
+  Rect,
+  SerializedCircleProps,
+} from 'fabric';
 import { Undo2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 
@@ -18,7 +30,7 @@ interface CanvasDrawingProps {
 
 // Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
 const handlePanMode = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  fabricRef: React.MutableRefObject<Canvas | null>,
   containerRef: React.MutableRefObject<HTMLDivElement | null>,
 ) => {
   const canvas = fabricRef.current;
@@ -70,10 +82,10 @@ const handlePanMode = (
 };
 
 const handleClear = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  fabricRef: React.MutableRefObject<Canvas | null>,
   updateUndoState: () => void,
-  pointsRef: React.MutableRefObject<fabric.Circle[]>,
-  polygonRef: React.MutableRefObject<fabric.Polygon | null>,
+  pointsRef: React.MutableRefObject<Circle[]>,
+  polygonRef: React.MutableRefObject<Polygon | null>,
 ) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
@@ -86,12 +98,12 @@ const handleClear = (
 };
 
 const handleUndo = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  fabricRef: React.MutableRefObject<Canvas | null>,
   mode: ToolToggle,
   drawTool: DrawTool,
   updateUndoState: () => void,
-  pointsRef: React.MutableRefObject<fabric.Circle[]>,
-  polygonRef: React.MutableRefObject<fabric.Polygon | null>,
+  pointsRef: React.MutableRefObject<Circle[]>,
+  polygonRef: React.MutableRefObject<Polygon | null>,
 ) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
@@ -110,7 +122,7 @@ const handleUndo = (
               x: point.left!,
               y: point.top!,
             }));
-            polygonRef.current = new fabric.Polygon(points, {
+            polygonRef.current = new Polygon(points, {
               fill: 'transparent',
               stroke: 'blue',
               strokeWidth: 2,
@@ -133,9 +145,7 @@ const handleUndo = (
   }
 };
 
-const handleExportSVG = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
-) => {
+const handleExportSVG = (fabricRef: React.MutableRefObject<Canvas | null>) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
 
@@ -144,9 +154,7 @@ const handleExportSVG = (
   saveAs(blob, 'canvas_export.svg');
 };
 
-const handleExportCOCO = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
-) => {
+const handleExportCOCO = (fabricRef: React.MutableRefObject<Canvas | null>) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
 
@@ -209,9 +217,7 @@ const handleExportCOCO = (
   saveAs(blob, 'coco_export.json');
 };
 
-const handleExportPNG = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
-) => {
+const handleExportPNG = (fabricRef: React.MutableRefObject<Canvas | null>) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
 
@@ -223,7 +229,7 @@ const handleExportPNG = (
 };
 
 const updateUndoState = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  fabricRef: React.MutableRefObject<Canvas | null>,
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   const canvas = fabricRef.current;
@@ -232,9 +238,7 @@ const updateUndoState = (
   setCanUndo(canvas._objects.length > 0);
 };
 
-const handleResetZoom = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
-) => {
+const handleResetZoom = (fabricRef: React.MutableRefObject<Canvas | null>) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
 
@@ -243,17 +247,38 @@ const handleResetZoom = (
   canvas.renderAll();
 };
 
-const handleResetPan = (
-  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
-) => {
+const handleResetPan = (fabricRef: React.MutableRefObject<Canvas | null>) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
 
   // TODO: implement
 };
 
+// TODO: check if it is working
+const handleSetImageBackground = (
+  fabricRef: React.MutableRefObject<Canvas | null>,
+  containerRef: React.RefObject<HTMLDivElement>,
+  imageUrl: string,
+) => {
+  const canvas = fabricRef.current;
+  const container = containerRef.current;
+  if (!canvas || !container) return;
+
+  FabricImage.fromURL(imageUrl).then(img => {
+    img.canvas = canvas;
+    canvas.backgroundImage = img;
+
+    const { width, height } = container.getBoundingClientRect();
+
+    canvas.width = width;
+    canvas.height = height;
+
+    canvas.renderAll();
+  });
+};
+
 const setupRectangleDrawing = (
-  canvas: fabric.Canvas,
+  canvas: Canvas,
   strokeColor: string,
   strokeWidth: number,
   updateUndoState: () => void,
@@ -262,7 +287,7 @@ const setupRectangleDrawing = (
   let isDrawing = false;
   let startX = 0;
   let startY = 0;
-  let rect: fabric.Rect | null = null;
+  let rect: Rect | null = null;
 
   canvas.on('mouse:down', options => {
     isDrawing = true;
@@ -270,7 +295,7 @@ const setupRectangleDrawing = (
     startX = pointer.x;
     startY = pointer.y;
 
-    rect = new fabric.Rect({
+    rect = new Rect({
       left: startX,
       top: startY,
       width: 0,
@@ -313,16 +338,12 @@ const setupRectangleDrawing = (
 };
 
 const setupPolygonDrawing = (
-  canvas: fabric.Canvas,
+  canvas: Canvas,
   pointsRef: React.MutableRefObject<
-    fabric.Circle<
-      Partial<fabric.CircleProps>,
-      fabric.SerializedCircleProps,
-      fabric.ObjectEvents
-    >[]
+    Circle<Partial<CircleProps>, SerializedCircleProps, ObjectEvents>[]
   >,
   strokeColor: string,
-  polygonRef: React.MutableRefObject<fabric.Polygon | null>,
+  polygonRef: React.MutableRefObject<Polygon | null>,
   setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>,
   updateUndoState: () => void,
 ) => {
@@ -333,7 +354,7 @@ const setupPolygonDrawing = (
 
     if (pointsRef.current.length === 0) {
       // reference starting point
-      const firstPoint = new fabric.Circle({
+      const firstPoint = new Circle({
         left: x,
         top: y,
         radius: 5,
@@ -360,8 +381,8 @@ const setupPolygonDrawing = (
           y: point.top!,
         }));
 
-        const polygon = new fabric.Polygon(points, {
-          fill: fabric.Color.fromHex(strokeColor).setAlpha(0.3).toRgba(),
+        const polygon = new Polygon(points, {
+          fill: Color.fromHex(strokeColor).setAlpha(0.3).toRgba(),
           stroke: strokeColor,
           strokeWidth: 2,
           erasable: true,
@@ -380,7 +401,7 @@ const setupPolygonDrawing = (
         polygonRef.current = null;
       } else {
         // add new point
-        const newPoint = new fabric.Circle({
+        const newPoint = new Circle({
           left: x,
           top: y,
           radius: 3,
@@ -404,7 +425,7 @@ const setupPolygonDrawing = (
           y: point.top!,
         }));
 
-        polygonRef.current = new fabric.Polygon(points, {
+        polygonRef.current = new Polygon(points, {
           fill: 'transparent',
           stroke: 'blue',
           strokeWidth: 2,
@@ -430,11 +451,11 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 }: CanvasDrawingProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const fabricRef = useRef<fabric.Canvas | null>(null);
+  const fabricRef = useRef<Canvas | null>(null);
 
   const [canUndo, setCanUndo] = useState(false);
-  const polygonRef = useRef<fabric.Polygon | null>(null);
-  const pointsRef = useRef<fabric.Circle[]>([]);
+  const polygonRef = useRef<Polygon | null>(null);
+  const pointsRef = useRef<Circle[]>([]);
 
   const mode = new ToolToggle(canvasMode);
   const drawTool = new DrawTool(canvasDrawTool);
@@ -485,7 +506,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
-    const canvas = new fabric.Canvas(canvasRef.current, {
+    const canvas = new Canvas(canvasRef.current, {
       backgroundColor: 'transparent', // dark mode compatible
       uniformScaling: true,
       uniScaleKey: 'shiftKey',
@@ -531,7 +552,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       zoom *= 0.999 ** delta;
       if (zoom > 20) zoom = 20;
       if (zoom < 0.01) zoom = 0.01;
-      canvas.zoomToPoint(new fabric.Point(opt.e.offsetX, opt.e.offsetY), zoom);
+      canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
       opt.e.preventDefault();
       opt.e.stopPropagation();
     });
@@ -557,7 +578,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
     if (mode.isDraw) {
       if (drawTool.isBrush) {
-        const pencilBrush = new fabric.PencilBrush(canvas);
+        const pencilBrush = new PencilBrush(canvas);
         pencilBrush.width = strokeWidth;
         pencilBrush.color = strokeColor;
         canvas.freeDrawingBrush = pencilBrush;
@@ -601,7 +622,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         obj.evented = true;
         obj.objectCaching = true;
         obj.noScaleCache = true;
-        if (!(obj instanceof fabric.Rect)) {
+        if (!(obj instanceof Rect)) {
           obj.perPixelTargetFind = true;
         }
       });
@@ -620,9 +641,10 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     <div className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden">
       <div
         ref={containerRef}
-        className="relative w-full h-screen bg-blue-400 rounded-lg overflow-visible"
+        className="relative w-full h-screen rounded-lg overflow-visible"
       >
         <canvas
+          id="canvasId"
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full"
           style={{ transform: 'translate(0px, 0px)' }}
