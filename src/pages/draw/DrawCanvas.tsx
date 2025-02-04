@@ -16,309 +16,177 @@ interface CanvasDrawingProps {
   strokeWidth: number;
 }
 
-const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
-  canvasMode,
-  canvasDrawTool,
-  setCanvasToggle,
-  strokeColor,
-  strokeWidth,
-}: CanvasDrawingProps) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const fabricRef = useRef<fabric.Canvas | null>(null);
+const handleClear = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  updateUndoState: () => void,
+  pointsRef: React.MutableRefObject<fabric.Circle[]>,
+  polygonRef: React.MutableRefObject<fabric.Polygon | null>,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
+  canvas.clear();
+  canvas.backgroundColor = 'transparent';
+  canvas.renderAll();
+  updateUndoState();
+  pointsRef.current = [];
+  polygonRef.current = null;
+};
 
-  const [canUndo, setCanUndo] = useState(false);
-  const polygonRef = useRef<fabric.Polygon | null>(null);
-  const pointsRef = useRef<fabric.Circle[]>([]);
+const handleUndo = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  mode: ToolToggle,
+  drawTool: DrawTool,
+  updateUndoState: () => void,
+  pointsRef: React.MutableRefObject<fabric.Circle[]>,
+  polygonRef: React.MutableRefObject<fabric.Polygon | null>,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
+  const objects = canvas._objects;
+  if (objects.length > 0) {
+    if (mode.isDraw && drawTool.isPolygon) {
+      // For polygon mode, remove the last point
+      if (pointsRef.current.length > 0) {
+        const lastPoint = pointsRef.current.pop();
+        if (lastPoint) canvas.remove(lastPoint);
 
-  const mode = new ToolToggle(canvasMode);
-  const drawTool = new DrawTool(canvasDrawTool);
-
-  useEffect(() => {
-    if (!canvasRef.current || !containerRef.current) return;
-
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      backgroundColor: 'transparent', // dark mode compatible
-      uniformScaling: true,
-      uniScaleKey: 'shiftKey',
-    });
-
-    fabricRef.current = canvas;
-
-    const updateCanvasSize = () => {
-      if (!containerRef.current) return;
-      const { width, height } = containerRef.current.getBoundingClientRect();
-      canvas.setDimensions({ width, height });
-      canvas.renderAll();
-    };
-    updateCanvasSize();
-    window.addEventListener('resize', updateCanvasSize);
-
-    /**
-     * `perPixelTargetFind`
-     * By default, all Fabric objects on canvas can be dragged by the bounding box. However, in order to click/drag objects only by its actual contents, we need to set “perPixelTargetFind” as true.
-     *
-     * `noScaleCache`
-     * During the scaling transformation the object is not regenerated.
-     */
-
-    // make sure all drawn paths are erasable
-
-    canvas.on('path:created', ({ path }) => {
-      path.erasable = true;
-      path.perPixelTargetFind = true;
-      path.objectCaching = true;
-      path.noScaleCache = true;
-      canvas.renderAll();
-      updateUndoState();
-    });
-
-    // listen for object modifications
-    canvas.on('object:modified', updateUndoState);
-    // basic zoom control, limited between 1% and 2000%
-    canvas.on('mouse:wheel', function (opt) {
-      var delta = opt.e.deltaY;
-      var zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
-      if (zoom > 20) zoom = 20;
-      if (zoom < 0.01) zoom = 0.01;
-      canvas.setZoom(zoom);
-      opt.e.preventDefault();
-      opt.e.stopPropagation();
-    });
-
-    // cleanup
-    return () => {
-      window.removeEventListener('resize', updateCanvasSize);
-      canvas.dispose();
-    };
-  }, []);
-
-  const updateUndoState = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (canvas) {
-      setCanUndo(canvas._objects.length > 0);
-    }
-  }, []);
-
-  useEffect(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-
-    canvas.isDrawingMode =
-      mode.isDraw && (drawTool.isBrush || drawTool.isEraser);
-
-    // Remove all mode-specific listeners
-    canvas.off('mouse:down' as any);
-    canvas.off('mouse:move' as any);
-    canvas.off('mouse:up' as any);
-
-    if (mode.isDraw) {
-      if (drawTool.isBrush) {
-        const pencilBrush = new fabric.PencilBrush(canvas);
-        pencilBrush.width = strokeWidth;
-        pencilBrush.color = strokeColor;
-        canvas.freeDrawingBrush = pencilBrush;
-
-        canvas.off('path:created' as any);
-        canvas.on('path:created', ({ path }) => {
-          path.erasable = true;
-          path.perPixelTargetFind = true;
-          path.objectCaching = true;
-          path.noScaleCache = true;
-          canvas.renderAll();
-          updateUndoState();
-        });
-      } else if (drawTool.isEraser) {
-        const eraserBrush = new EraserBrush(canvas);
-        eraserBrush.width = strokeWidth;
-        canvas.freeDrawingBrush = eraserBrush;
-      } else if (drawTool.isRectangle) {
-        setupRectangleDrawing(
-          canvas,
-          strokeColor,
-          strokeWidth,
-          updateUndoState,
-          setCanvasToggle,
-        );
-      } else if (drawTool.isPolygon) {
-        setupPolygonDrawing(
-          canvas,
-          pointsRef,
-          strokeColor,
-          polygonRef,
-          setCanvasToggle,
-          updateUndoState,
-        );
-      }
-    } else {
-      // Set up selection mode
-      canvas.selection = true;
-      canvas.forEachObject(obj => {
-        obj.selectable = true;
-        obj.evented = true;
-        obj.objectCaching = true;
-        obj.noScaleCache = true;
-        if (!(obj instanceof fabric.Rect)) {
-          obj.perPixelTargetFind = true;
-        }
-      });
-    }
-  }, [mode, drawTool, strokeColor, strokeWidth, updateUndoState]);
-
-  const handleClear = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    canvas.clear();
-    canvas.backgroundColor = 'transparent';
-    canvas.renderAll();
-    updateUndoState();
-    pointsRef.current = [];
-    polygonRef.current = null;
-  }, [updateUndoState]);
-
-  const handleUndo = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
-    const objects = canvas._objects;
-    if (objects.length > 0) {
-      if (mode.isDraw && drawTool.isPolygon) {
-        // For polygon mode, remove the last point
-        if (pointsRef.current.length > 0) {
-          const lastPoint = pointsRef.current.pop();
-          if (lastPoint) canvas.remove(lastPoint);
-
-          if (polygonRef.current) {
-            canvas.remove(polygonRef.current);
-            if (pointsRef.current.length > 1) {
-              const points = pointsRef.current.map(point => ({
-                x: point.left!,
-                y: point.top!,
-              }));
-              polygonRef.current = new fabric.Polygon(points, {
-                fill: 'transparent',
-                stroke: 'blue',
-                strokeWidth: 2,
-                erasable: true,
-                objectCaching: true,
-                noScaleCache: true,
-              });
-              canvas.add(polygonRef.current);
-            } else {
-              polygonRef.current = null;
-            }
+        if (polygonRef.current) {
+          canvas.remove(polygonRef.current);
+          if (pointsRef.current.length > 1) {
+            const points = pointsRef.current.map(point => ({
+              x: point.left!,
+              y: point.top!,
+            }));
+            polygonRef.current = new fabric.Polygon(points, {
+              fill: 'transparent',
+              stroke: 'blue',
+              strokeWidth: 2,
+              erasable: true,
+              objectCaching: true,
+              noScaleCache: true,
+            });
+            canvas.add(polygonRef.current);
+          } else {
+            polygonRef.current = null;
           }
         }
-      } else {
-        // For other modes, remove the last object
-        canvas.remove(objects[objects.length - 1]);
       }
-      canvas.renderAll();
-      updateUndoState();
+    } else {
+      // For other modes, remove the last object
+      canvas.remove(objects[objects.length - 1]);
     }
-  }, [mode, drawTool, updateUndoState]);
+    canvas.renderAll();
+    updateUndoState();
+  }
+};
 
-  const handleExportSVG = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
+const handleExportSVG = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
 
-    const svg = canvas.toSVG();
-    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-    saveAs(blob, 'canvas_export.svg');
-  }, []);
+  const svg = canvas.toSVG();
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  saveAs(blob, 'canvas_export.svg');
+};
 
-  const handleExportCOCO = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
+const handleExportCOCO = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
 
-    const objects = canvas.getObjects();
-    const imageWidth = canvas.width;
-    const imageHeight = canvas.height;
+  const objects = canvas.getObjects();
+  const imageWidth = canvas.width;
+  const imageHeight = canvas.height;
 
-    const cocoData = {
-      info: {
-        description: 'Canvas Export',
-        url: '',
-        version: '1.0',
-        year: new Date().getFullYear(),
-        contributor: '',
-        date_created: new Date().toISOString(),
+  const cocoData = {
+    info: {
+      description: 'Canvas Export',
+      url: '',
+      version: '1.0',
+      year: new Date().getFullYear(),
+      contributor: '',
+      date_created: new Date().toISOString(),
+    },
+    licenses: [
+      {
+        url: 'http://creativecommons.org/licenses/by-nc-sa/2.0/',
+        id: 1,
+        name: 'Attribution-NonCommercial-ShareAlike License',
       },
-      licenses: [
-        {
-          url: 'http://creativecommons.org/licenses/by-nc-sa/2.0/',
-          id: 1,
-          name: 'Attribution-NonCommercial-ShareAlike License',
-        },
-      ],
-      images: [
-        {
-          license: 1,
-          file_name: 'canvas_export.png',
-          coco_url: '',
-          height: imageHeight,
-          width: imageWidth,
-          date_captured: new Date().toISOString(),
-          flickr_url: '',
-          id: 1,
-        },
-      ],
-      annotations: objects.map((obj, index) => {
-        const bbox = obj.getBoundingRect();
-        return {
-          segmentation: [], // We'll need to implement this for each shape type
-          area: bbox.width * bbox.height,
-          iscrowd: 0,
-          image_id: 1,
-          bbox: [bbox.left, bbox.top, bbox.width, bbox.height],
-          category_id: 1, // We'll need to implement category mapping
-          id: index + 1,
-        };
-      }),
-      categories: [
-        {
-          supercategory: 'shape',
-          id: 1,
-          name: 'shape',
-        },
-      ],
-    };
+    ],
+    images: [
+      {
+        license: 1,
+        file_name: 'canvas_export.png',
+        coco_url: '',
+        height: imageHeight,
+        width: imageWidth,
+        date_captured: new Date().toISOString(),
+        flickr_url: '',
+        id: 1,
+      },
+    ],
+    annotations: objects.map((obj, index) => {
+      const bbox = obj.getBoundingRect();
+      return {
+        segmentation: [], // We'll need to implement this for each shape type
+        area: bbox.width * bbox.height,
+        iscrowd: 0,
+        image_id: 1,
+        bbox: [bbox.left, bbox.top, bbox.width, bbox.height],
+        category_id: 1, // We'll need to implement category mapping
+        id: index + 1,
+      };
+    }),
+    categories: [
+      {
+        supercategory: 'shape',
+        id: 1,
+        name: 'shape',
+      },
+    ],
+  };
 
-    const blob = new Blob([JSON.stringify(cocoData, null, 2)], {
-      type: 'application/json',
-    });
-    saveAs(blob, 'coco_export.json');
-  }, []);
+  const blob = new Blob([JSON.stringify(cocoData, null, 2)], {
+    type: 'application/json',
+  });
+  saveAs(blob, 'coco_export.json');
+};
 
-  const handleExportPNG = useCallback(() => {
-    const canvas = fabricRef.current;
-    if (!canvas) return;
+const handleExportPNG = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
 
-    canvas.getElement().toBlob(blob => {
-      if (blob) {
-        saveAs(blob, 'canvas_export.png');
-      }
-    });
-  }, []);
+  canvas.getElement().toBlob(blob => {
+    if (blob) {
+      saveAs(blob, 'canvas_export.png');
+    }
+  });
+};
 
-  return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden"
-    >
-      <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
-      <div className="absolute top-4 left-4 flex gap-2">
-        <Button onClick={handleClear}>Clear canvas</Button>
-        <Button onClick={handleUndo} disabled={!canUndo}>
-          <Undo2 className="h-4 w-4" />
-          Undo
-        </Button>
-        <Button onClick={handleExportSVG}>Export SVG</Button>
-        <Button onClick={handleExportCOCO}>Export COCO</Button>
-        <Button onClick={handleExportPNG}>Export PNG</Button>
-      </div>
-    </div>
-  );
+const updateUndoState = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  setCanUndo: React.Dispatch<React.SetStateAction<boolean>>,
+) => {
+  const canvas = fabricRef.current;
+  if (canvas) {
+    setCanUndo(canvas._objects.length > 0);
+  }
+};
+
+const handleResetZoom = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+) => {
+  if (fabricRef.current) {
+    fabricRef.current.setZoom(1);
+    fabricRef.current.viewportTransform = [1, 0, 0, 1, 0, 0];
+    fabricRef.current.renderAll();
+  }
 };
 
 const setupRectangleDrawing = (
@@ -488,6 +356,211 @@ const setupPolygonDrawing = (
     }
     updateUndoState();
   });
+};
+
+const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
+  canvasMode,
+  canvasDrawTool,
+  setCanvasToggle,
+  strokeColor,
+  strokeWidth,
+}: CanvasDrawingProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fabricRef = useRef<fabric.Canvas | null>(null);
+
+  const [canUndo, setCanUndo] = useState(false);
+  const polygonRef = useRef<fabric.Polygon | null>(null);
+  const pointsRef = useRef<fabric.Circle[]>([]);
+
+  const mode = new ToolToggle(canvasMode);
+  const drawTool = new DrawTool(canvasDrawTool);
+
+  const updateUndoStateCallback = useCallback(() => {
+    updateUndoState(fabricRef, setCanUndo);
+  }, []);
+
+  const handleClearCallback = useCallback(() => {
+    handleClear(fabricRef, updateUndoStateCallback, pointsRef, polygonRef);
+  }, [updateUndoStateCallback]);
+
+  const handleUndoCallback = useCallback(() => {
+    handleUndo(
+      fabricRef,
+      mode,
+      drawTool,
+      updateUndoStateCallback,
+      pointsRef,
+      polygonRef,
+    );
+  }, [mode, drawTool, updateUndoStateCallback]);
+
+  const handleExportSVGCallback = useCallback(() => {
+    handleExportSVG(fabricRef);
+  }, []);
+
+  const handleExportCOCOCallback = useCallback(() => {
+    handleExportCOCO(fabricRef);
+  }, []);
+
+  const handleExportPNGCallback = useCallback(() => {
+    handleExportPNG(fabricRef);
+  }, []);
+
+  const handleResetZoomCallback = useCallback(() => {
+    handleResetZoom(fabricRef);
+  }, []);
+
+  useEffect(() => {
+    if (!canvasRef.current || !containerRef.current) return;
+
+    const canvas = new fabric.Canvas(canvasRef.current, {
+      backgroundColor: 'transparent', // dark mode compatible
+      uniformScaling: true,
+      uniScaleKey: 'shiftKey',
+    });
+
+    fabricRef.current = canvas;
+
+    const updateCanvasSize = () => {
+      if (!containerRef.current) return;
+      const { width, height } = containerRef.current.getBoundingClientRect();
+      canvas.setDimensions({ width, height });
+      canvas.renderAll();
+    };
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+
+    /**
+     * `perPixelTargetFind`
+     * By default, all Fabric objects on canvas can be dragged by the bounding box. However, in order to click/drag objects only by its actual contents, we need to set “perPixelTargetFind” as true.
+     *
+     * `noScaleCache`
+     * During the scaling transformation the object is not regenerated.
+     */
+
+    // make sure all drawn paths are erasable
+
+    canvas.on('path:created', ({ path }) => {
+      path.erasable = true;
+      path.perPixelTargetFind = true;
+      path.objectCaching = true;
+      path.noScaleCache = true;
+      canvas.renderAll();
+      updateUndoStateCallback();
+    });
+
+    // listen for object modifications
+    canvas.on('object:modified', updateUndoStateCallback);
+    // basic zoom control, limited between 1% and 2000%
+    canvas.on('mouse:wheel', function (opt) {
+      var delta = opt.e.deltaY;
+      var zoom = canvas.getZoom();
+      zoom *= 0.999 ** delta;
+      if (zoom > 20) zoom = 20;
+      if (zoom < 0.01) zoom = 0.01;
+      canvas.setZoom(zoom);
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
+    });
+
+    // cleanup
+    return () => {
+      window.removeEventListener('resize', updateCanvasSize);
+      canvas.dispose();
+    };
+  }, [updateUndoStateCallback]);
+
+  useEffect(() => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+
+    canvas.isDrawingMode =
+      mode.isDraw && (drawTool.isBrush || drawTool.isEraser);
+
+    // Remove all mode-specific listeners
+    canvas.off('mouse:down' as any);
+    canvas.off('mouse:move' as any);
+    canvas.off('mouse:up' as any);
+
+    if (mode.isDraw) {
+      if (drawTool.isBrush) {
+        const pencilBrush = new fabric.PencilBrush(canvas);
+        pencilBrush.width = strokeWidth;
+        pencilBrush.color = strokeColor;
+        canvas.freeDrawingBrush = pencilBrush;
+
+        canvas.off('path:created' as any);
+        canvas.on('path:created', ({ path }) => {
+          path.erasable = true;
+          path.perPixelTargetFind = true;
+          path.objectCaching = true;
+          path.noScaleCache = true;
+          canvas.renderAll();
+          updateUndoStateCallback();
+        });
+      } else if (drawTool.isEraser) {
+        const eraserBrush = new EraserBrush(canvas);
+        eraserBrush.width = strokeWidth;
+        canvas.freeDrawingBrush = eraserBrush;
+      } else if (drawTool.isRectangle) {
+        setupRectangleDrawing(
+          canvas,
+          strokeColor,
+          strokeWidth,
+          updateUndoStateCallback,
+          setCanvasToggle,
+        );
+      } else if (drawTool.isPolygon) {
+        setupPolygonDrawing(
+          canvas,
+          pointsRef,
+          strokeColor,
+          polygonRef,
+          setCanvasToggle,
+          updateUndoStateCallback,
+        );
+      }
+    } else {
+      // Set up selection mode
+      canvas.selection = true;
+      canvas.forEachObject(obj => {
+        obj.selectable = true;
+        obj.evented = true;
+        obj.objectCaching = true;
+        obj.noScaleCache = true;
+        if (!(obj instanceof fabric.Rect)) {
+          obj.perPixelTargetFind = true;
+        }
+      });
+    }
+  }, [
+    mode,
+    drawTool,
+    strokeColor,
+    strokeWidth,
+    updateUndoStateCallback,
+    setCanvasToggle,
+  ]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden"
+    >
+      <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
+      <div className="absolute top-4 left-4 flex gap-2">
+        <Button onClick={handleClearCallback}>Clear canvas</Button>
+        <Button onClick={handleUndoCallback} disabled={!canUndo}>
+          <Undo2 className="h-4 w-4" />
+          Undo
+        </Button>
+        <Button onClick={handleExportSVGCallback}>Export SVG</Button>
+        <Button onClick={handleExportCOCOCallback}>Export COCO</Button>
+        <Button onClick={handleExportPNGCallback}>Export PNG</Button>
+      </div>
+    </div>
+  );
 };
 
 export default CanvasDrawing;
