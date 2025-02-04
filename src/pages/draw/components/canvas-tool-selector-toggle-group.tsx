@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/tooltip';
 
 import { useToast } from '@/hooks/use-toast';
-import FileUploadModalButton from './FileUploadModalButton';
+import FileUploadModalButton from './file-upload-modal-button';
 
 interface toolToogleConfigs {
   value: ToolToggleEnum;

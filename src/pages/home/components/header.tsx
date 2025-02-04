@@ -1,8 +1,8 @@
 import { Box } from 'lucide-react';
 import type React from 'react';
 import { Link } from 'react-router';
-import ThemeSwitchButton from '../../components/theme-switch-button';
-import { Button } from '../../components/ui/button';
+import ThemeSwitchButton from '@/components/theme-switch-button';
+import { Button } from '@/components/ui/button';
 
 const Header: React.FC = () => {
   return (

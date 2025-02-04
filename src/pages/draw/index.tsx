@@ -15,8 +15,8 @@ import { useDrawHandlers } from '@/utils/drawHandlers';
 import { ArrowLeft, Box, Menu } from 'lucide-react';
 import type React from 'react';
 import { useNavigate } from 'react-router';
+import Toolbar from './components/canvas-toolbar';
 import CanvasDrawing from './DrawCanvas';
-import Toolbar from './Toolbar';
 
 const DrawPage: React.FC = () => {
   const navigate = useNavigate();

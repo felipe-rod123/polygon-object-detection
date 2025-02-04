@@ -620,7 +620,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     <div className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden">
       <div
         ref={containerRef}
-        className="relative w-full h-screen p-4 rounded-lg overflow-hidden"
+        className="relative w-full h-screen bg-blue-400 rounded-lg overflow-visible"
       >
         <canvas
           ref={canvasRef}

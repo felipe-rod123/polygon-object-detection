@@ -23,7 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import type React from 'react';
-import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
+import ToolSelectorToggleGroup from './canvas-tool-selector-toggle-group';
 
 interface ToolbarProps {
   toggle: ToolToggleEnum;
