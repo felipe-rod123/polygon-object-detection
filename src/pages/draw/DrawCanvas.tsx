@@ -86,9 +86,9 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       mode.isDraw && (drawTool.isBrush || drawTool.isEraser);
 
     // Remove all mode-specific listeners
-    canvas.off('mouse:down');
-    canvas.off('mouse:move');
-    canvas.off('mouse:up');
+    canvas.off('mouse:down' as any);
+    canvas.off('mouse:move' as any);
+    canvas.off('mouse:up' as any);
 
     if (mode.isDraw) {
       if (drawTool.isBrush) {
@@ -97,7 +97,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         pencilBrush.color = strokeColor;
         canvas.freeDrawingBrush = pencilBrush;
 
-        canvas.off('path:created');
+        canvas.off('path:created' as any);
         canvas.on('path:created', ({ path }) => {
           path.erasable = true;
           canvas.renderAll();
@@ -259,6 +259,18 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     saveAs(blob, 'coco_export.json');
   }, []);
 
+  const handleExportPNG = useCallback(() => {
+    console.log('PNG Export clicked');
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+
+    canvas.getElement().toBlob(blob => {
+      if (blob) {
+        saveAs(blob, 'canvas_export.png');
+      }
+    });
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -273,6 +285,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         </Button>
         <Button onClick={handleExportSVG}>Export SVG</Button>
         <Button onClick={handleExportCOCO}>Export COCO</Button>
+        <Button onClick={handleExportPNG}>Export PNG</Button>
       </div>
     </div>
   );
