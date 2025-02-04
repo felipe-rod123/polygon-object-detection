@@ -127,13 +127,13 @@ const DrawPage: React.FC = () => {
             handleAddClass={handleAddClass}
           />
         </div>
-        {/* <DrawCanvas
+        <CanvasDrawing
           canvasMode={toggle}
           canvasDrawTool={drawTool}
-          strokeColor={selectedClass?.color}
+          setCanvasToggle={setToggle}
+          strokeColor={selectedClass?.color ?? '#532ee3'}
           strokeWidth={brushSize}
-        /> */}
-        <CanvasDrawing />
+        />
       </main>
       <Toaster />
     </div>

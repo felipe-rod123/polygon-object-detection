@@ -13,15 +13,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import type { DrawClass } from '@/types/DrawClass';
 import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
-import {
-  Brush,
-  Download,
-  Eraser,
-  Image,
-  RotateCcw,
-  Square,
-  X,
-} from 'lucide-react';
+import { Brush, Download, Eraser, Image, Square, Tangent, X } from 'lucide-react';
 import type React from 'react';
 import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
 
@@ -87,8 +79,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
                   </SelectItem>
                   <SelectItem value="polygon">
                     <div className="flex items-center">
-                      <Square className="mr-2 h-4 w-4" />
+                      <Tangent className="mr-2 h-4 w-4" />
                       Polygon
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="rectangle">
+                    <div className="flex items-center">
+                      <Square className="mr-2 h-4 w-4" />
+                      Rectangle
                     </div>
                   </SelectItem>
                   <SelectItem value="eraser">
@@ -184,9 +182,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Button className="w-full mt-4 sm:mt-1" variant="secondary">
-            <RotateCcw className="mr-2 h-4 w-4" /> Undo
-          </Button>
+          <Label htmlFor="export">Export canvas</Label>
           <Button className="w-full" variant="outline">
             <Download className="mr-2 h-4 w-4" /> Export COCO
           </Button>
