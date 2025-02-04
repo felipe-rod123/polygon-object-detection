@@ -16,6 +16,59 @@ interface CanvasDrawingProps {
   strokeWidth: number;
 }
 
+// Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
+const handlePanMode = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+  containerRef: React.MutableRefObject<HTMLDivElement | null>,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas || !containerRef.current) return;
+
+  let lastPosX = 0;
+  let lastPosY = 0;
+  let isDragging = false;
+
+  const wrapper = containerRef.current;
+
+  const onMouseDown = (event: MouseEvent) => {
+    isDragging = true;
+    lastPosX = event.clientX;
+    lastPosY = event.clientY;
+    wrapper.style.cursor = 'grabbing';
+  };
+
+  const onMouseMove = (event: MouseEvent) => {
+    if (!isDragging) return;
+    const dx = event.clientX - lastPosX;
+    const dy = event.clientY - lastPosY;
+    lastPosX = event.clientX;
+    lastPosY = event.clientY;
+
+    const transform = wrapper.style.transform.match(
+      /translate\(([-\d.]+)px, ([-\d.]+)px\)/,
+    );
+    let offsetX = transform ? parseFloat(transform[1]) + dx : dx;
+    let offsetY = transform ? parseFloat(transform[2]) + dy : dy;
+
+    wrapper.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  };
+
+  const onMouseUp = () => {
+    isDragging = false;
+    wrapper.style.cursor = 'grab';
+  };
+
+  wrapper.addEventListener('mousedown', onMouseDown);
+  wrapper.addEventListener('mousemove', onMouseMove);
+  wrapper.addEventListener('mouseup', onMouseUp);
+
+  return () => {
+    wrapper.removeEventListener('mousedown', onMouseDown);
+    wrapper.removeEventListener('mousemove', onMouseMove);
+    wrapper.removeEventListener('mouseup', onMouseUp);
+  };
+};
+
 const handleClear = (
   fabricRef: React.MutableRefObject<fabric.Canvas | null>,
   updateUndoState: () => void,
@@ -174,19 +227,29 @@ const updateUndoState = (
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>,
 ) => {
   const canvas = fabricRef.current;
-  if (canvas) {
-    setCanUndo(canvas._objects.length > 0);
-  }
+  if (!canvas) return;
+
+  setCanUndo(canvas._objects.length > 0);
 };
 
 const handleResetZoom = (
   fabricRef: React.MutableRefObject<fabric.Canvas | null>,
 ) => {
-  if (fabricRef.current) {
-    fabricRef.current.setZoom(1);
-    fabricRef.current.viewportTransform = [1, 0, 0, 1, 0, 0];
-    fabricRef.current.renderAll();
-  }
+  const canvas = fabricRef.current;
+  if (!canvas) return;
+
+  canvas.setZoom(1);
+  canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
+  canvas.renderAll();
+};
+
+const handleResetPan = (
+  fabricRef: React.MutableRefObject<fabric.Canvas | null>,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
+
+  // TODO: implement
 };
 
 const setupRectangleDrawing = (
@@ -411,6 +474,14 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     handleResetZoom(fabricRef);
   }, []);
 
+  const handleResetPanCallback = useCallback(() => {
+    handleResetPan(fabricRef);
+  }, []);
+
+  const handlePanModeCallback = useCallback(() => {
+    handlePanMode(fabricRef, containerRef);
+  }, []);
+
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
@@ -452,14 +523,15 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
     // listen for object modifications
     canvas.on('object:modified', updateUndoStateCallback);
-    // basic zoom control, limited between 1% and 2000%
+
+    // zoom control around a central point, limited between 1% and 2000%
     canvas.on('mouse:wheel', function (opt) {
       var delta = opt.e.deltaY;
       var zoom = canvas.getZoom();
       zoom *= 0.999 ** delta;
       if (zoom > 20) zoom = 20;
       if (zoom < 0.01) zoom = 0.01;
-      canvas.setZoom(zoom);
+      canvas.zoomToPoint(new fabric.Point(opt.e.offsetX, opt.e.offsetY), zoom);
       opt.e.preventDefault();
       opt.e.stopPropagation();
     });
@@ -534,6 +606,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         }
       });
     }
+    if (mode.isPan) handlePanModeCallback();
   }, [
     mode,
     drawTool,
@@ -544,11 +617,17 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   ]);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden"
-    >
-      <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
+    <div className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden">
+      <div
+        ref={containerRef}
+        className="relative w-full h-screen p-4 rounded-lg overflow-hidden"
+      >
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full"
+          style={{ transform: 'translate(0px, 0px)' }}
+        />
+      </div>
       <div className="absolute top-4 left-4 flex gap-2">
         <Button onClick={handleClearCallback}>Clear canvas</Button>
         <Button onClick={handleUndoCallback} disabled={!canUndo}>
@@ -558,6 +637,8 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         <Button onClick={handleExportSVGCallback}>Export SVG</Button>
         <Button onClick={handleExportCOCOCallback}>Export COCO</Button>
         <Button onClick={handleExportPNGCallback}>Export PNG</Button>
+        <Button onClick={handleResetZoomCallback}>Reset zoom</Button>
+        <Button onClick={handleResetPanCallback}>Reset pan</Button>
       </div>
     </div>
   );
