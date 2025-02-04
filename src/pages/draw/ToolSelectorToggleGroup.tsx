@@ -1,5 +1,5 @@
 import { Hand, Pen, Save, SquareDashedMousePointer } from 'lucide-react';
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
@@ -40,15 +40,19 @@ const toolToggleGroup: toolToogleConfigs[] = [
 ];
 
 export default function ToolSelectorToggleGroup({
+  toggle,
   setToggle,
 }: {
+  toggle: ToolToggleEnum;
   setToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
 }) {
   const { toast } = useToast();
 
-  const [toggleState, setToggleState] = useState<ToolToggleEnum>(
-    ToolToggleEnum.DRAW,
-  );
+  const [toggleState, setToggleState] = useState<ToolToggleEnum>(toggle);
+
+  useEffect(() => {
+    setToggleState(toggle);
+  }, [toggle]);
 
   const handleToggleChange = (value: ToolToggleEnum) => {
     if (value) {

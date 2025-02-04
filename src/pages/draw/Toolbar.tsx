@@ -13,12 +13,20 @@ import {
 import { Slider } from '@/components/ui/slider';
 import type { DrawClass } from '@/types/DrawClass';
 import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
-import { Brush, Download, Eraser, Image, Square, Tangent, X } from 'lucide-react';
+import {
+  Brush,
+  Download,
+  Eraser,
+  Image,
+  Square,
+  Tangent,
+  X,
+} from 'lucide-react';
 import type React from 'react';
 import ToolSelectorToggleGroup from './ToolSelectorToggleGroup';
 
 interface ToolbarProps {
-  toggle: string;
+  toggle: ToolToggleEnum;
   setToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
   handleDrawToolChange: (value: string) => void;
   brushSize: number;
@@ -55,7 +63,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   return (
     <>
       <div className="flex md:justify-start justify-center">
-        <ToolSelectorToggleGroup setToggle={setToggle} />
+        <ToolSelectorToggleGroup toggle={toggle} setToggle={setToggle} />
       </div>
       <div className="space-y-6">
         {toggle === 'draw' && (
