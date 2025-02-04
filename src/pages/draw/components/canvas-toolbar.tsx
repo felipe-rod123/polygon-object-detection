@@ -13,16 +13,23 @@ import {
 import { Slider } from '@/components/ui/slider';
 import type { DrawClass } from '@/types/DrawClass';
 import type { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import { Canvas } from 'fabric';
 import {
   Brush,
   Download,
   Eraser,
   Image,
+  PenTool,
   Square,
   Tangent,
   X,
 } from 'lucide-react';
 import type React from 'react';
+import {
+  handleExportCOCO,
+  handleExportPNG,
+  handleExportSVG,
+} from '../../../utils/exportHandlers';
 import ToolSelectorToggleGroup from './canvas-tool-selector-toggle-group';
 
 interface ToolbarProps {
@@ -41,6 +48,7 @@ interface ToolbarProps {
   newClassColor: string;
   setNewClassColor: (color: string) => void;
   handleAddClass: () => void;
+  fabricRef: React.MutableRefObject<Canvas | null>;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -59,6 +67,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   newClassColor,
   setNewClassColor,
   handleAddClass,
+  fabricRef,
 }) => {
   return (
     <>
@@ -194,16 +203,23 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <Button
             className="w-full"
             variant="outline"
-            onClick={() => console.log('Exported COCO file')} // FIXME
+            onClick={() => handleExportCOCO(fabricRef)}
           >
             <Download className="mr-2 h-4 w-4" /> Export COCO
           </Button>
           <Button
             className="w-full"
             variant="outline"
-            onClick={() => console.log('Exported SVG file')} // FIXME
+            onClick={() => handleExportPNG(fabricRef)}
           >
-            <Image className="mr-2 h-4 w-4" /> Save as SVG
+            <Image className="mr-2 h-4 w-4" /> Save as PNG
+          </Button>
+          <Button
+            className="w-full"
+            variant="outline"
+            onClick={() => handleExportSVG(fabricRef)}
+          >
+            <PenTool className="mr-2 h-4 w-4" /> Save as SVG
           </Button>
         </div>
       </div>

@@ -1,24 +1,28 @@
 import { EraserBrush } from '@erase2d/fabric';
-import { saveAs } from 'file-saver';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import { handleClear } from '@/utils/clearCanvasHandler';
+import {
+  handleExportCOCO,
+  handleExportPNG,
+  handleExportSVG,
+} from '@/utils/exportHandlers';
+import { setupPolygonDrawing } from '@/utils/polygonBuilder';
+import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
+import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
+import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
 import {
   Canvas,
   Circle,
-  CircleProps,
-  Color,
   FabricImage,
-  ObjectEvents,
   PencilBrush,
-  Point,
   Polygon,
   Rect,
-  SerializedCircleProps,
 } from 'fabric';
 import { Undo2 } from 'lucide-react';
-import { Button } from '../../components/ui/button';
 
 interface CanvasDrawingProps {
   canvasMode: ToolToggleEnum;
@@ -26,9 +30,11 @@ interface CanvasDrawingProps {
   setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
   strokeColor: string;
   strokeWidth: number;
+  fabricRef: React.MutableRefObject<Canvas | null>;
 }
 
 // Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
+// FIXME: can't get out of the pan mode, once it started
 const handlePanMode = (
   fabricRef: React.MutableRefObject<Canvas | null>,
   containerRef: React.MutableRefObject<HTMLDivElement | null>,
@@ -81,172 +87,6 @@ const handlePanMode = (
   };
 };
 
-const handleClear = (
-  fabricRef: React.MutableRefObject<Canvas | null>,
-  updateUndoState: () => void,
-  pointsRef: React.MutableRefObject<Circle[]>,
-  polygonRef: React.MutableRefObject<Polygon | null>,
-) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-  canvas.clear();
-  canvas.backgroundColor = 'transparent';
-  canvas.renderAll();
-  updateUndoState();
-  pointsRef.current = [];
-  polygonRef.current = null;
-};
-
-const handleUndo = (
-  fabricRef: React.MutableRefObject<Canvas | null>,
-  mode: ToolToggle,
-  drawTool: DrawTool,
-  updateUndoState: () => void,
-  pointsRef: React.MutableRefObject<Circle[]>,
-  polygonRef: React.MutableRefObject<Polygon | null>,
-) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-  const objects = canvas._objects;
-  if (objects.length > 0) {
-    if (mode.isDraw && drawTool.isPolygon) {
-      // For polygon mode, remove the last point
-      if (pointsRef.current.length > 0) {
-        const lastPoint = pointsRef.current.pop();
-        if (lastPoint) canvas.remove(lastPoint);
-
-        if (polygonRef.current) {
-          canvas.remove(polygonRef.current);
-          if (pointsRef.current.length > 1) {
-            const points = pointsRef.current.map(point => ({
-              x: point.left!,
-              y: point.top!,
-            }));
-            polygonRef.current = new Polygon(points, {
-              fill: 'transparent',
-              stroke: 'blue',
-              strokeWidth: 2,
-              erasable: true,
-              objectCaching: true,
-              noScaleCache: true,
-            });
-            canvas.add(polygonRef.current);
-          } else {
-            polygonRef.current = null;
-          }
-        }
-      }
-    } else {
-      // For other modes, remove the last object
-      canvas.remove(objects[objects.length - 1]);
-    }
-    canvas.renderAll();
-    updateUndoState();
-  }
-};
-
-const handleExportSVG = (fabricRef: React.MutableRefObject<Canvas | null>) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  const svg = canvas.toSVG();
-  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-  saveAs(blob, 'canvas_export.svg');
-};
-
-const handleExportCOCO = (fabricRef: React.MutableRefObject<Canvas | null>) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  const objects = canvas.getObjects();
-  const imageWidth = canvas.width;
-  const imageHeight = canvas.height;
-
-  const cocoData = {
-    info: {
-      description: 'Canvas Export',
-      url: '',
-      version: '1.0',
-      year: new Date().getFullYear(),
-      contributor: '',
-      date_created: new Date().toISOString(),
-    },
-    licenses: [
-      {
-        url: 'http://creativecommons.org/licenses/by-nc-sa/2.0/',
-        id: 1,
-        name: 'Attribution-NonCommercial-ShareAlike License',
-      },
-    ],
-    images: [
-      {
-        license: 1,
-        file_name: 'canvas_export.png',
-        coco_url: '',
-        height: imageHeight,
-        width: imageWidth,
-        date_captured: new Date().toISOString(),
-        flickr_url: '',
-        id: 1,
-      },
-    ],
-    annotations: objects.map((obj, index) => {
-      const bbox = obj.getBoundingRect();
-      return {
-        segmentation: [], // We'll need to implement this for each shape type
-        area: bbox.width * bbox.height,
-        iscrowd: 0,
-        image_id: 1,
-        bbox: [bbox.left, bbox.top, bbox.width, bbox.height],
-        category_id: 1, // We'll need to implement category mapping
-        id: index + 1,
-      };
-    }),
-    categories: [
-      {
-        supercategory: 'shape',
-        id: 1,
-        name: 'shape',
-      },
-    ],
-  };
-
-  const blob = new Blob([JSON.stringify(cocoData, null, 2)], {
-    type: 'application/json',
-  });
-  saveAs(blob, 'coco_export.json');
-};
-
-const handleExportPNG = (fabricRef: React.MutableRefObject<Canvas | null>) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  canvas.getElement().toBlob(blob => {
-    if (blob) {
-      saveAs(blob, 'canvas_export.png');
-    }
-  });
-};
-
-const updateUndoState = (
-  fabricRef: React.MutableRefObject<Canvas | null>,
-  setCanUndo: React.Dispatch<React.SetStateAction<boolean>>,
-) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  setCanUndo(canvas._objects.length > 0);
-};
-
-const handleResetZoom = (fabricRef: React.MutableRefObject<Canvas | null>) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  canvas.setZoom(1);
-  canvas.viewportTransform = [1, 0, 0, 1, 0, 0];
-  canvas.renderAll();
-};
-
 const handleResetPan = (fabricRef: React.MutableRefObject<Canvas | null>) => {
   const canvas = fabricRef.current;
   if (!canvas) return;
@@ -277,181 +117,16 @@ const handleSetImageBackground = (
   });
 };
 
-const setupRectangleDrawing = (
-  canvas: Canvas,
-  strokeColor: string,
-  strokeWidth: number,
-  updateUndoState: () => void,
-  setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>,
-) => {
-  let isDrawing = false;
-  let startX = 0;
-  let startY = 0;
-  let rect: Rect | null = null;
-
-  canvas.on('mouse:down', options => {
-    isDrawing = true;
-    const pointer = canvas.getPointer(options.e);
-    startX = pointer.x;
-    startY = pointer.y;
-
-    rect = new Rect({
-      left: startX,
-      top: startY,
-      width: 0,
-      height: 0,
-      fill: 'transparent',
-      stroke: strokeColor,
-      strokeWidth: strokeWidth,
-      erasable: true,
-      objectCaching: true,
-      noScaleCache: true,
-    });
-
-    canvas.add(rect);
-  });
-
-  canvas.on('mouse:move', options => {
-    if (!isDrawing || !rect) return;
-
-    const pointer = canvas.getPointer(options.e);
-    const width = pointer.x - startX;
-    const height = pointer.y - startY;
-
-    rect.set({
-      width: Math.abs(width),
-      height: Math.abs(height),
-      left: width > 0 ? startX : pointer.x,
-      top: height > 0 ? startY : pointer.y,
-    });
-
-    canvas.renderAll();
-  });
-
-  canvas.on('mouse:up', () => {
-    isDrawing = false;
-    rect = null;
-    canvas.renderAll();
-    updateUndoState();
-    setCanvasToggle(ToolToggleEnum.SELECT);
-  });
-};
-
-const setupPolygonDrawing = (
-  canvas: Canvas,
-  pointsRef: React.MutableRefObject<
-    Circle<Partial<CircleProps>, SerializedCircleProps, ObjectEvents>[]
-  >,
-  strokeColor: string,
-  polygonRef: React.MutableRefObject<Polygon | null>,
-  setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>,
-  updateUndoState: () => void,
-) => {
-  canvas.on('mouse:down', options => {
-    const pointer = canvas.getPointer(options.e);
-    const x = pointer.x;
-    const y = pointer.y;
-
-    if (pointsRef.current.length === 0) {
-      // reference starting point
-      const firstPoint = new Circle({
-        left: x,
-        top: y,
-        radius: 5,
-        fill: 'red',
-        originX: 'center',
-        originY: 'center',
-        erasable: true,
-        objectCaching: true,
-        noScaleCache: true,
-      });
-      canvas.add(firstPoint);
-      pointsRef.current.push(firstPoint);
-    } else {
-      // const lastPoint = pointsRef.current[pointsRef.current.length - 1];
-      const distanceToFirst = Math.sqrt(
-        Math.pow(x - pointsRef.current[0].left!, 2) +
-          Math.pow(y - pointsRef.current[0].top!, 2),
-      );
-
-      if (distanceToFirst < 10 && pointsRef.current.length > 2) {
-        // close the polygon
-        const points = pointsRef.current.map(point => ({
-          x: point.left!,
-          y: point.top!,
-        }));
-
-        const polygon = new Polygon(points, {
-          fill: Color.fromHex(strokeColor).setAlpha(0.3).toRgba(),
-          stroke: strokeColor,
-          strokeWidth: 2,
-          erasable: true,
-          objectCaching: true,
-          noScaleCache: true,
-        });
-
-        canvas.remove(...pointsRef.current);
-        if (polygonRef.current) canvas.remove(polygonRef.current); // Remove the polygon editing line
-        canvas.add(polygon);
-        canvas.renderAll();
-
-        // Reset for next polygon
-        setCanvasToggle(ToolToggleEnum.SELECT);
-        pointsRef.current = [];
-        polygonRef.current = null;
-      } else {
-        // add new point
-        const newPoint = new Circle({
-          left: x,
-          top: y,
-          radius: 3,
-          fill: 'blue',
-          originX: 'center',
-          originY: 'center',
-          erasable: true,
-          objectCaching: true,
-          noScaleCache: true,
-        });
-        canvas.add(newPoint);
-        pointsRef.current.push(newPoint);
-
-        // Update or create the polygon
-        if (polygonRef.current) {
-          canvas.remove(polygonRef.current);
-        }
-
-        const points = pointsRef.current.map(point => ({
-          x: point.left!,
-          y: point.top!,
-        }));
-
-        polygonRef.current = new Polygon(points, {
-          fill: 'transparent',
-          stroke: 'blue',
-          strokeWidth: 2,
-          erasable: true,
-          objectCaching: true,
-          noScaleCache: true,
-        });
-
-        canvas.add(polygonRef.current);
-        canvas.renderAll();
-      }
-    }
-    updateUndoState();
-  });
-};
-
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
   canvasDrawTool,
   setCanvasToggle,
   strokeColor,
   strokeWidth,
+  fabricRef,
 }: CanvasDrawingProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const fabricRef = useRef<Canvas | null>(null);
 
   const [canUndo, setCanUndo] = useState(false);
   const polygonRef = useRef<Polygon | null>(null);
@@ -462,6 +137,10 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
   const updateUndoStateCallback = useCallback(() => {
     updateUndoState(fabricRef, setCanUndo);
+  }, []);
+
+  const updateZoomCallback = useCallback(() => {
+    handleZoom(fabricRef);
   }, []);
 
   const handleClearCallback = useCallback(() => {
@@ -483,6 +162,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     handleExportSVG(fabricRef);
   }, []);
 
+  // TODO: export this, instead, for the exporters
   const handleExportCOCOCallback = useCallback(() => {
     handleExportCOCO(fabricRef);
   }, []);
@@ -545,17 +225,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     // listen for object modifications
     canvas.on('object:modified', updateUndoStateCallback);
 
-    // zoom control around a central point, limited between 1% and 2000%
-    canvas.on('mouse:wheel', function (opt) {
-      var delta = opt.e.deltaY;
-      var zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
-      if (zoom > 20) zoom = 20;
-      if (zoom < 0.01) zoom = 0.01;
-      canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
-      opt.e.preventDefault();
-      opt.e.stopPropagation();
-    });
+    updateZoomCallback();
 
     // cleanup
     return () => {
@@ -656,9 +326,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           <Undo2 className="h-4 w-4" />
           Undo
         </Button>
-        <Button onClick={handleExportSVGCallback}>Export SVG</Button>
-        <Button onClick={handleExportCOCOCallback}>Export COCO</Button>
-        <Button onClick={handleExportPNGCallback}>Export PNG</Button>
+
         <Button onClick={handleResetZoomCallback}>Reset zoom</Button>
         <Button onClick={handleResetPanCallback}>Reset pan</Button>
       </div>

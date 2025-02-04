@@ -12,8 +12,10 @@ import {
 } from '@/components/ui/sheet';
 import { Toaster } from '@/components/ui/toaster';
 import { useDrawHandlers } from '@/utils/drawHandlers';
+import { Canvas } from 'fabric';
 import { ArrowLeft, Box, Menu } from 'lucide-react';
 import type React from 'react';
+import { useRef } from 'react';
 import { useNavigate } from 'react-router';
 import Toolbar from './components/canvas-toolbar';
 import CanvasDrawing from './DrawCanvas';
@@ -37,6 +39,8 @@ const DrawPage: React.FC = () => {
     setNewClassColor,
     setToggle,
   } = useDrawHandlers();
+
+  const fabricRef = useRef<Canvas | null>(null);
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
@@ -95,6 +99,7 @@ const DrawPage: React.FC = () => {
                     newClassColor={newClassColor}
                     setNewClassColor={setNewClassColor}
                     handleAddClass={handleAddClass}
+                    fabricRef={fabricRef}
                   />
                 </div>
               </SheetContent>
@@ -125,6 +130,7 @@ const DrawPage: React.FC = () => {
             newClassColor={newClassColor}
             setNewClassColor={setNewClassColor}
             handleAddClass={handleAddClass}
+            fabricRef={fabricRef}
           />
         </div>
         <CanvasDrawing
@@ -133,6 +139,7 @@ const DrawPage: React.FC = () => {
           setCanvasToggle={setToggle}
           strokeColor={selectedClass?.color ?? '#532ee3'}
           strokeWidth={brushSize}
+          fabricRef={fabricRef}
         />
       </main>
       <Toaster />
