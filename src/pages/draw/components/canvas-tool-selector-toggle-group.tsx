@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/tooltip';
 
 import { useToast } from '@/hooks/use-toast';
-import FileUploadModalButton from './file-upload-modal-button';
 
 interface toolToogleConfigs {
   value: ToolToggleEnum;
@@ -91,7 +90,7 @@ export default function ToolSelectorToggleGroup({
         <Tooltip key="save">
           <TooltipTrigger asChild>
             <Button
-              size='icon'
+              size="icon"
               className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
               onClick={() => {
                 toast({
@@ -110,7 +109,8 @@ export default function ToolSelectorToggleGroup({
         </Tooltip>
         <Tooltip key="import">
           <TooltipTrigger asChild>
-            <FileUploadModalButton />
+            oi
+            {/* <FileUploadModalButton /> */}
           </TooltipTrigger>
           <TooltipContent>
             <p>Import file</p>

@@ -9,55 +9,97 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useToast } from '@/hooks/use-toast';
+import type { Canvas } from 'fabric';
 import { Upload } from 'lucide-react';
 import type React from 'react';
-import { forwardRef, useState } from 'react';
+import { useState } from 'react';
 
-const acceptedFileTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+interface FileUploadModalButtonProps {
+  fabricRef: React.MutableRefObject<Canvas | null>;
+  handleSetImageBackground: (
+    fabricRef: React.MutableRefObject<Canvas | null>,
+    imageUrl: string,
+  ) => void;
+  handleAddImageObject: (
+    fabricRef: React.MutableRefObject<Canvas | null>,
+    imageUrl: string,
+  ) => void;
+}
 
-const FileUploadModalButton = forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->((_props, ref) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
+  fabricRef,
+  handleSetImageBackground,
+  handleAddImageObject,
+}) => {
+  const { toast } = useToast();
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [uploadType, setUploadType] = useState<'background' | 'object'>(
+    'object',
+  );
+  const [imageUrl, setImageUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (acceptedFileTypes.includes(selectedFile.type)) {
-        setFile(selectedFile);
-        if (selectedFile.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = e => setPreview(e.target?.result as string);
-          reader.readAsDataURL(selectedFile);
-        } else {
-          setPreview(null);
-        }
-      } else {
-        alert('Please select a PDF or image file.');
-        e.target.value = '';
-      }
+    if (e.target.files) {
+      setFiles(e.target.files);
     }
   };
 
-  const handleUpload = () => {
-    if (file) {
-      // TODO: implement file upload logic here
-      console.log('Uploading file:', file);
-
-      // Reset state after upload
-      setFile(null);
-      setPreview(null);
+  const handleUpload = async () => {
+    setLoading(true);
+    try {
+      if (files && files.length > 0) {
+        await Promise.all(
+          Array.from(files).map(
+            file =>
+              new Promise<void>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                  const result = e.target?.result;
+                  if (typeof result === 'string') {
+                    if (uploadType === 'background') {
+                      handleSetImageBackground(fabricRef, result);
+                    } else {
+                      handleAddImageObject(fabricRef, result);
+                    }
+                    resolve();
+                  } else {
+                    reject(new Error('Failed to read file'));
+                  }
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+              }),
+          ),
+        );
+      } else if (imageUrl) {
+        if (uploadType === 'background') {
+          handleSetImageBackground(fabricRef, imageUrl);
+        } else {
+          handleAddImageObject(fabricRef, imageUrl);
+        }
+      }
+      setOpen(false);
+    } catch (error) {
+      console.log(error);
+      toast({
+        title: 'Upload Error',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           size="icon"
-          ref={ref}
           className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
         >
           <Upload className="h-4 w-4 text-black dark:text-white" />
@@ -65,58 +107,54 @@ const FileUploadModalButton = forwardRef<
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
         <DialogHeader>
-          <DialogTitle>Import file</DialogTitle>
+          <DialogTitle>Upload Image</DialogTitle>
           <DialogDescription>
-            Upload a PDF or image file (PNG, JPEG).
+            Upload an image from your device or provide a URL.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="file">File</Label>
+          <RadioGroup
+            defaultValue="object"
+            onValueChange={(value: string) =>
+              setUploadType(value as 'background' | 'object')
+            }
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="object" id="object" />
+              <Label htmlFor="object">Add as object</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="background" id="background" />
+              <Label htmlFor="background">Set as background</Label>
+            </div>
+          </RadioGroup>
+          <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Label htmlFor="file">Upload from device</Label>
             <Input
               id="file"
               type="file"
-              accept={acceptedFileTypes.join(',')}
+              accept="image/*"
               onChange={handleFileChange}
-              className="bg-zinc-200 text-zinc-900 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700"
+              multiple={uploadType === 'object'}
             />
           </div>
-          {preview && (
-            <div className="relative w-full h-40">
-              <img
-                src={preview || '/placeholder.svg'}
-                alt="File preview"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
-          {file && !preview && (
-            <div className="bg-zinc-200 text-zinc-900 p-4 rounded dark:bg-zinc-800 dark:text-zinc-100">
-              <p>{file.name}</p>
-              <p>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-            </div>
-          )}
+          <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Label htmlFor="url">Image URL</Label>
+            <Input
+              id="url"
+              type="url"
+              placeholder="https://example.com/image.jpg"
+              value={imageUrl}
+              onChange={e => setImageUrl(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="flex justify-end gap-2">
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              className="text-zinc-900 hover:bg-zinc-200 dark:text-zinc-100 dark:hover:bg-zinc-800"
-            >
-              Cancel
-            </Button>
-          </DialogTrigger>
-          <Button
-            onClick={handleUpload}
-            disabled={!file}
-            className="bg-main-600 text-zinc-100 hover:bg-main-500"
-          >
-            Upload
-          </Button>
-        </div>
+        <Button onClick={handleUpload} disabled={loading}>
+          {loading ? 'Uploading...' : 'Upload'}
+        </Button>
       </DialogContent>
     </Dialog>
   );
-});
+};
 
 export default FileUploadModalButton;

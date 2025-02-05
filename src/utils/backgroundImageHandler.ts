@@ -1,5 +1,6 @@
 import { Canvas, FabricImage } from 'fabric';
 
+// FIXME: blocked by CORS policy sometimes
 export const handleSetImageBackground = (
   fabricRef: React.MutableRefObject<Canvas | null>,
   imageUrl: string,

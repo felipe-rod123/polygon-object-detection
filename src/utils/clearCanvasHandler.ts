@@ -1,4 +1,4 @@
-import { Canvas, Circle, Polygon } from "fabric";
+import { Canvas, Circle, Polygon } from 'fabric';
 
 export const handleClear = (
   fabricRef: React.MutableRefObject<Canvas | null>,

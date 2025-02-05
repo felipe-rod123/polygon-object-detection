@@ -1,6 +1,3 @@
-import { EraserBrush } from '@erase2d/fabric';
-import { useCallback, useEffect, useRef, useState } from 'react';
-
 import { Button } from '@/components/ui/button';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
@@ -9,16 +6,17 @@ import { setupPolygonDrawing } from '@/utils/polygonBuilder';
 import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
 import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
 import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
+import { EraserBrush } from '@erase2d/fabric';
 import {
   Canvas,
   type Circle,
-  FabricImage,
   PencilBrush,
   Point,
   type Polygon,
   Rect,
 } from 'fabric';
 import { Focus, ImageOff, Undo2, Video } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Tooltip,
   TooltipContent,
@@ -29,6 +27,8 @@ import {
   handleRemoveImageBackground,
   handleSetImageBackground,
 } from '../../utils/backgroundImageHandler';
+import { handleAddImageObject } from '../../utils/objectImageHandler';
+import FileUploadModalButton from './components/file-upload-modal-button';
 
 interface CanvasDrawingProps {
   canvasMode: ToolToggleEnum;
@@ -38,28 +38,6 @@ interface CanvasDrawingProps {
   strokeWidth: number;
   fabricRef: React.MutableRefObject<Canvas | null>;
 }
-
-export const handleAddImageObject = (
-  fabricRef: React.MutableRefObject<Canvas | null>,
-  imageUrl: string,
-) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  /**
-   * If you must load resources from another domain, you need to ensure that the server hosting those resources explicitly allows your domain to access them.
-   * This is done through Cross-Origin Resource Sharing (CORS) headers
-   */
-
-  FabricImage.fromURL(imageUrl, {
-    crossOrigin: 'anonymous',
-  }).then(img => {
-    img.canvas = canvas;
-    canvas.add(img);
-
-    canvas.renderAll();
-  });
-};
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
@@ -280,6 +258,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     strokeWidth,
     updateUndoStateCallback,
     setCanvasToggle,
+    fabricRef,
   ]);
 
   return (
@@ -346,27 +325,13 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
               <p>Remove background</p>
             </TooltipContent>
           </Tooltip>
+
+          <FileUploadModalButton
+            fabricRef={fabricRef}
+            handleSetImageBackground={handleSetImageBackground}
+            handleAddImageObject={handleAddImageObject}
+          />
         </TooltipProvider>
-        <Button
-          onClick={() =>
-            handleSetImageBackground(
-              fabricRef,
-              'https://upload.wikimedia.org/wikipedia/commons/a/aa/Oi_logo_2022.png',
-            )
-          }
-        >
-          Change bg img
-        </Button>
-        <Button
-          onClick={() =>
-            handleAddImageObject(
-              fabricRef,
-              'https://upload.wikimedia.org/wikipedia/commons/a/aa/Oi_logo_2022.png',
-            )
-          }
-        >
-          Add img object
-        </Button>
       </div>
     </div>
   );
