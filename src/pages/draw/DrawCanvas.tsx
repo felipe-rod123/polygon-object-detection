@@ -10,7 +10,13 @@ import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
 import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
 import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
 import { Canvas, Circle, PencilBrush, Polygon, Rect } from 'fabric';
-import { Undo2 } from 'lucide-react';
+import { Focus, ImageOff, Undo2, Video } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip';
 import {
   handleRemoveImageBackground,
   handleSetImageBackground,
@@ -277,14 +283,58 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         />
       </div>
       <div className="absolute top-4 left-4 flex gap-2">
-        <Button onClick={handleClearCallback}>Clear canvas</Button>
-        <Button onClick={handleUndoCallback} disabled={!canUndo}>
-          <Undo2 className="h-4 w-4" />
-          Undo
-        </Button>
+        <TooltipProvider>
+          <Button onClick={handleClearCallback}>Clear canvas</Button>
+          <Button onClick={handleUndoCallback} disabled={!canUndo}>
+            <Undo2 className="h-4 w-4" />
+            Undo
+          </Button>
 
-        <Button onClick={handleResetZoomCallback}>Reset zoom</Button>
-        <Button onClick={handleResetPanCallback}>Reset pan</Button>
+          <Tooltip key="reset-zoom">
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
+                onClick={handleResetZoomCallback}
+              >
+                <Video className="h-4 w-4 text-black dark:text-white" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Reset zoom</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip key="reset-pan">
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
+                onClick={handleResetPanCallback}
+              >
+                <Focus className="h-4 w-4 text-black dark:text-white" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Reset mouse pan</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip key="remove-bg">
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
+                onClick={() => handleRemoveImageBackground(fabricRef)}
+              >
+                <ImageOff className="h-4 w-4 text-black dark:text-white" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Remove background</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Button
           onClick={() =>
             handleSetImageBackground(
@@ -294,9 +344,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           }
         >
           Change bg img
-        </Button>
-        <Button onClick={() => handleRemoveImageBackground(fabricRef)}>
-          Remove bg img
         </Button>
       </div>
     </div>

@@ -91,6 +91,7 @@ export default function ToolSelectorToggleGroup({
         <Tooltip key="save">
           <TooltipTrigger asChild>
             <Button
+              size='icon'
               className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
               onClick={() => {
                 toast({

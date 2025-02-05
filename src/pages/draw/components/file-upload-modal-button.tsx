@@ -56,6 +56,7 @@ const FileUploadModalButton = forwardRef<
     <Dialog>
       <DialogTrigger asChild>
         <Button
+          size="icon"
           ref={ref}
           className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
         >
@@ -64,7 +65,7 @@ const FileUploadModalButton = forwardRef<
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
         <DialogHeader>
-          <DialogTitle>Upload File</DialogTitle>
+          <DialogTitle>Import file</DialogTitle>
           <DialogDescription>
             Upload a PDF or image file (PNG, JPEG).
           </DialogDescription>
