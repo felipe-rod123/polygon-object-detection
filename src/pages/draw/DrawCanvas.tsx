@@ -1,11 +1,9 @@
 import TooltipToggleButton from '@/components/tooltip-toggle-button';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { handleClear } from '@/utils/clearCanvasHandler';
-import { handleRemoveImageBackground } from '@/utils/imageHandlers';
 import {
   copyObject,
   cutObject,
@@ -27,7 +25,7 @@ import {
   Rect,
   TEvent,
 } from 'fabric';
-import { Focus, ImageOff, Undo2, Video } from 'lucide-react';
+import { Focus, Undo2, Video } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
@@ -45,6 +43,7 @@ interface CanvasDrawingProps {
   strokeWidth: number;
   fabricRef: React.MutableRefObject<Canvas | null>;
   selectedClass: string;
+  fillPolygon: boolean;
 }
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
@@ -55,12 +54,12 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   strokeWidth,
   fabricRef,
   selectedClass,
+  fillPolygon,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [canUndo, setCanUndo] = useState(false);
-  const [fillPolygon, setFillPolygon] = useState(false);
   const polygonRef = useRef<Polygon | null>(null);
   const pointsRef = useRef<Circle[]>([]);
   const objectIdCounter = useRef(0);
@@ -100,10 +99,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       fabricRef.current.absolutePan(new Point(0, 0));
       fabricRef.current.renderAll();
     }
-  }, [fabricRef]);
-
-  const handleRemoveImageBackgroundCallback = useCallback(() => {
-    handleRemoveImageBackground(fabricRef);
   }, [fabricRef]);
 
   useEffect(() => {
@@ -262,6 +257,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           updateUndoStateCallback,
           setCanvasToggle,
           selectedClass,
+          fillPolygon,
         );
       } else if (drawTool.isPolygon) {
         setupPolygonDrawing(
@@ -428,20 +424,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
             icon={<Focus className="h-4 w-4 text-black dark:text-white" />}
             tooltipText="Reset mouse pan"
           />
-
-          <TooltipToggleButton
-            keyValue="remove-bg"
-            onClick={handleRemoveImageBackgroundCallback}
-            icon={<ImageOff className="h-4 w-4 text-black dark:text-white" />}
-            tooltipText="Remove background"
-          />
         </TooltipProvider>
-      </div>
-      <div className="absolute top-4 right-4 flex gap-2">
-        <label className="flex items-center gap-2">
-          <span className="text-black dark:text-white">Fill Polygon</span>
-          <Switch checked={fillPolygon} onCheckedChange={setFillPolygon} />
-        </label>
       </div>
     </div>
   );

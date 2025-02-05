@@ -198,6 +198,7 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
             <Button
               onClick={handleUpload}
               className="px-8 bg-main-500 text-zinc-50 hover:bg-main-700"
+              disabled={!files && !imageUrl}
             >
               Upload
             </Button>

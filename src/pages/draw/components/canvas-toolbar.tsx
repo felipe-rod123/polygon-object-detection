@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import type React from 'react';
+import { Switch } from '../../../components/ui/switch';
 import ToolSelectorToggleGroup from './canvas-tool-selector-toggle-group';
 
 interface ToolbarProps {
@@ -45,6 +46,8 @@ interface ToolbarProps {
   setNewClassColor: (color: string) => void;
   handleAddClass: () => void;
   fabricRef: React.MutableRefObject<Canvas | null>;
+  fillPolygon: boolean;
+  setFillPolygon: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -64,6 +67,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setNewClassColor,
   handleAddClass,
   fabricRef,
+  fillPolygon,
+  setFillPolygon,
 }) => {
   return (
     <>
@@ -116,21 +121,33 @@ const Toolbar: React.FC<ToolbarProps> = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="brush-size">Stroke Size</Label>
-              <Slider
-                id="brush-size"
-                min={1}
-                max={50}
-                step={1}
-                value={[brushSize]}
-                onValueChange={handleBrushSizeChange}
-                className="w-full"
-              />
-              <p className="text-sm text-zinc-700 dark:text-zinc-400">
-                {brushSize} px
-              </p>
-            </div>
+            {(drawTool === 'polygon' || drawTool === 'rectangle') && (
+              <div className="flex flex-row space-x-2 items-center">
+                <Switch
+                  checked={fillPolygon}
+                  onCheckedChange={setFillPolygon}
+                />
+                <Label htmlFor="tool-select">Fill color</Label>
+              </div>
+            )}
+
+            {drawTool !== 'polygon' && (
+              <div className="space-y-2">
+                <Label htmlFor="brush-size">Stroke Size</Label>
+                <Slider
+                  id="brush-size"
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={[brushSize]}
+                  onValueChange={handleBrushSizeChange}
+                  className="w-full"
+                />
+                <p className="text-sm text-zinc-700 dark:text-zinc-400">
+                  {brushSize} px
+                </p>
+              </div>
+            )}
           </>
         )}
 

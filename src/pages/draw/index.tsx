@@ -28,9 +28,11 @@ const DrawPage: React.FC = () => {
     brushSize,
     drawTool,
     toggle,
+    fillPolygon,
     handleBrushSizeChange,
     handleDrawToolChange,
     setToggle,
+    setFillPolygon,
   } = useDrawTools();
 
   const {
@@ -105,6 +107,8 @@ const DrawPage: React.FC = () => {
                     setNewClassColor={setNewClassColor}
                     handleAddClass={handleAddClass}
                     fabricRef={fabricRef}
+                    fillPolygon={fillPolygon}
+                    setFillPolygon={setFillPolygon}
                   />
                 </div>
               </SheetContent>
@@ -136,6 +140,8 @@ const DrawPage: React.FC = () => {
             setNewClassColor={setNewClassColor}
             handleAddClass={handleAddClass}
             fabricRef={fabricRef}
+            fillPolygon={fillPolygon}
+            setFillPolygon={setFillPolygon}
           />
         </div>
         <CanvasDrawing
@@ -146,6 +152,7 @@ const DrawPage: React.FC = () => {
           strokeWidth={brushSize}
           fabricRef={fabricRef}
           selectedClass={selectedClass?.name || 'no-class'}
+          fillPolygon={fillPolygon}
         />
       </main>
       <Toaster />

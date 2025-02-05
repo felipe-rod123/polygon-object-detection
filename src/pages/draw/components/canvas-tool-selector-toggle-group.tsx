@@ -1,5 +1,5 @@
-import { Hand, Pen, Save, SquareDashedMousePointer } from 'lucide-react';
-import React, { ReactElement, useEffect, useState } from 'react';
+import { Hand, ImageOff, Pen, SquareDashedMousePointer } from 'lucide-react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
@@ -13,8 +13,11 @@ import {
 
 import TooltipToggleButton from '@/components/tooltip-toggle-button';
 import { useToast } from '@/hooks/use-toast';
-import { handleSetImageBackground } from '@/utils/imageHandlers';
-import { handleAddImageObject } from '@/utils/imageHandlers';
+import {
+  handleAddImageObject,
+  handleRemoveImageBackground,
+  handleSetImageBackground,
+} from '@/utils/imageHandlers';
 import { Canvas } from 'fabric';
 import FileUploadModalButton from './file-upload-modal-button';
 
@@ -66,6 +69,10 @@ export default function ToolSelectorToggleGroup({
     }
   };
 
+  const handleRemoveImageBackgroundCallback = useCallback(() => {
+    handleRemoveImageBackground(fabricRef);
+  }, [fabricRef]);
+
   return (
     <TooltipProvider>
       <div className="flex flex-row space-x-1">
@@ -95,16 +102,11 @@ export default function ToolSelectorToggleGroup({
         </ToggleGroup>
 
         <TooltipToggleButton
-          keyValue="save"
-          onClick={() => {
-            toast({
-              title: 'Save not implemented yet',
-              description: 'Your files have not been saved locally.',
-              variant: 'destructive',
-            });
-          }}
-          icon={<Save className="h-4 w-4 text-black dark:text-white" />}
-          tooltipText="Save files locally"
+          keyValue="remove-bg"
+          onClick={handleRemoveImageBackgroundCallback}
+          icon={<ImageOff className="h-4 w-4 text-black dark:text-white" />}
+          tooltipText="Remove background"
+          transparent={true}
         />
 
         <Tooltip key="import">

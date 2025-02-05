@@ -1,4 +1,4 @@
-import { Canvas, Rect } from 'fabric';
+import { Canvas, Color, Rect } from 'fabric';
 import { ToolToggleEnum } from '../types/enums/ToolToggleEnum';
 
 let objectIdCounter = 0;
@@ -10,6 +10,7 @@ export const setupRectangleDrawing = (
   updateUndoState: () => void,
   setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>,
   classColorName: string,
+  fillPolygon: boolean,
 ) => {
   let isDrawing = false;
   let startX = 0;
@@ -27,7 +28,9 @@ export const setupRectangleDrawing = (
       top: startY,
       width: 0,
       height: 0,
-      fill: 'transparent',
+      fill: fillPolygon
+        ? Color.fromHex(strokeColor).setAlpha(0.3).toRgba()
+        : 'transparent',
       stroke: strokeColor,
       strokeWidth: strokeWidth,
       erasable: true,

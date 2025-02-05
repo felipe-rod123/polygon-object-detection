@@ -6,6 +6,7 @@ export const useDrawTools = () => {
   const [brushSize, setBrushSize] = useState(10);
   const [drawTool, setDrawTool] = useState<DrawToolsEnum>(DrawToolsEnum.BRUSH);
   const [toggle, setToggle] = useState<ToolToggleEnum>(ToolToggleEnum.DRAW);
+  const [fillPolygon, setFillPolygon] = useState(true);
 
   const handleBrushSizeChange = (value: number[]) => {
     setBrushSize(value[0]);
@@ -21,8 +22,10 @@ export const useDrawTools = () => {
     brushSize,
     drawTool,
     toggle,
+    fillPolygon,
     handleBrushSizeChange,
     handleDrawToolChange,
     setToggle,
+    setFillPolygon,
   };
 };
