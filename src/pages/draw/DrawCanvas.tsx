@@ -3,13 +3,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
-import { ToolToggle, ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { handleClear } from '@/utils/clearCanvasHandler';
 import { setupPolygonDrawing } from '@/utils/polygonBuilder';
 import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
 import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
 import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
-import { Canvas, Circle, PencilBrush, Polygon, Rect } from 'fabric';
+import {
+  Canvas,
+  type Circle,
+  PencilBrush,
+  Point,
+  type Polygon,
+  Rect,
+} from 'fabric';
 import { Focus, ImageOff, Undo2, Video } from 'lucide-react';
 import {
   Tooltip,
@@ -32,65 +39,6 @@ interface CanvasDrawingProps {
 }
 
 // Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
-// FIXME: can't get out of the pan mode, once it started
-const handlePanMode = (
-  fabricRef: React.MutableRefObject<Canvas | null>,
-  containerRef: React.MutableRefObject<HTMLDivElement | null>,
-) => {
-  const canvas = fabricRef.current;
-  if (!canvas || !containerRef.current) return;
-
-  let lastPosX = 0;
-  let lastPosY = 0;
-  let isDragging = false;
-
-  const wrapper = containerRef.current;
-
-  const onMouseDown = (event: MouseEvent) => {
-    isDragging = true;
-    lastPosX = event.clientX;
-    lastPosY = event.clientY;
-    wrapper.style.cursor = 'grabbing';
-  };
-
-  const onMouseMove = (event: MouseEvent) => {
-    if (!isDragging) return;
-    const dx = event.clientX - lastPosX;
-    const dy = event.clientY - lastPosY;
-    lastPosX = event.clientX;
-    lastPosY = event.clientY;
-
-    const transform = wrapper.style.transform.match(
-      /translate\(([-\d.]+)px, ([-\d.]+)px\)/,
-    );
-    let offsetX = transform ? parseFloat(transform[1]) + dx : dx;
-    let offsetY = transform ? parseFloat(transform[2]) + dy : dy;
-
-    wrapper.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-  };
-
-  const onMouseUp = () => {
-    isDragging = false;
-    wrapper.style.cursor = 'grab';
-  };
-
-  wrapper.addEventListener('mousedown', onMouseDown);
-  wrapper.addEventListener('mousemove', onMouseMove);
-  wrapper.addEventListener('mouseup', onMouseUp);
-
-  return () => {
-    wrapper.removeEventListener('mousedown', onMouseDown);
-    wrapper.removeEventListener('mousemove', onMouseMove);
-    wrapper.removeEventListener('mouseup', onMouseUp);
-  };
-};
-
-const handleResetPan = (fabricRef: React.MutableRefObject<Canvas | null>) => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  // TODO: implement
-};
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
@@ -112,15 +60,15 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
   const updateUndoStateCallback = useCallback(() => {
     updateUndoState(fabricRef, setCanUndo);
-  }, []);
+  }, [fabricRef]);
 
   const updateZoomCallback = useCallback(() => {
     handleZoom(fabricRef);
-  }, []);
+  }, [fabricRef]);
 
   const handleClearCallback = useCallback(() => {
     handleClear(fabricRef, updateUndoStateCallback, pointsRef, polygonRef);
-  }, [updateUndoStateCallback]);
+  }, [fabricRef, updateUndoStateCallback]);
 
   const handleUndoCallback = useCallback(() => {
     handleUndo(
@@ -131,19 +79,18 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       pointsRef,
       polygonRef,
     );
-  }, [mode, drawTool, updateUndoStateCallback]);
+  }, [fabricRef, mode, drawTool, updateUndoStateCallback]);
 
   const handleResetZoomCallback = useCallback(() => {
     handleResetZoom(fabricRef);
-  }, []);
+  }, [fabricRef]);
 
   const handleResetPanCallback = useCallback(() => {
-    handleResetPan(fabricRef);
-  }, []);
-
-  const handlePanModeCallback = useCallback(() => {
-    handlePanMode(fabricRef, containerRef);
-  }, []);
+    if (fabricRef.current) {
+      fabricRef.current.absolutePan(new Point(0, 0));
+      fabricRef.current.renderAll();
+    }
+  }, [fabricRef]);
 
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
@@ -194,7 +141,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       window.removeEventListener('resize', updateCanvasSize);
       canvas.dispose();
     };
-  }, [updateUndoStateCallback]);
+  }, [updateUndoStateCallback, updateZoomCallback, fabricRef]);
 
   useEffect(() => {
     const canvas = fabricRef.current;
@@ -214,16 +161,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         pencilBrush.width = strokeWidth;
         pencilBrush.color = strokeColor;
         canvas.freeDrawingBrush = pencilBrush;
-
-        canvas.off('path:created' as any);
-        canvas.on('path:created', ({ path }) => {
-          path.erasable = true;
-          path.perPixelTargetFind = true;
-          path.objectCaching = true;
-          path.noScaleCache = true;
-          canvas.renderAll();
-          updateUndoStateCallback();
-        });
       } else if (drawTool.isEraser) {
         const eraserBrush = new EraserBrush(canvas);
         eraserBrush.width = strokeWidth;
@@ -246,9 +183,64 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           updateUndoStateCallback,
         );
       }
+    } else if (mode.isPan) {
+      canvas.defaultCursor = 'grab';
+      canvas.hoverCursor = 'grab';
+      canvas.selection = false;
+      canvas.forEachObject(obj => {
+        obj.selectable = false;
+        obj.evented = false;
+      });
+
+      let isDragging = false;
+      let lastPosX: number;
+      let lastPosY: number;
+
+      canvas.on('mouse:down', opt => {
+        const evt = opt.e;
+        isDragging = true;
+        canvas.selection = false;
+        if (evt instanceof MouseEvent) {
+          lastPosX = evt.clientX;
+          lastPosY = evt.clientY;
+        } else if (evt instanceof TouchEvent) {
+          lastPosX = evt.touches[0].clientX;
+          lastPosY = evt.touches[0].clientY;
+        }
+        canvas.defaultCursor = 'grabbing';
+        canvas.renderAll();
+      });
+
+      canvas.on('mouse:move', opt => {
+        if (isDragging) {
+          const evt = opt.e;
+          const vpt = canvas.viewportTransform;
+          if (!vpt) return;
+          if (evt instanceof MouseEvent) {
+            vpt[4] += evt.clientX - lastPosX;
+            vpt[5] += evt.clientY - lastPosY;
+            lastPosX = evt.clientX;
+            lastPosY = evt.clientY;
+          } else if (evt instanceof TouchEvent) {
+            vpt[4] += evt.touches[0].clientX - lastPosX;
+            vpt[5] += evt.touches[0].clientY - lastPosY;
+            lastPosX = evt.touches[0].clientX;
+            lastPosY = evt.touches[0].clientY;
+          }
+          canvas.requestRenderAll();
+        }
+      });
+
+      canvas.on('mouse:up', () => {
+        isDragging = false;
+        canvas.defaultCursor = 'grab';
+        canvas.renderAll();
+      });
     } else {
       // Set up selection mode
       canvas.selection = true;
+      canvas.defaultCursor = 'default';
+      canvas.hoverCursor = 'move';
       canvas.forEachObject(obj => {
         obj.selectable = true;
         obj.evented = true;
@@ -259,7 +251,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         }
       });
     }
-    if (mode.isPan) handlePanModeCallback();
   }, [
     mode,
     drawTool,
@@ -273,13 +264,12 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     <div className="relative w-full h-screen p-4 bg-zinc-200 dark:bg-zinc-800 rounded-lg shadow-lg overflow-hidden">
       <div
         ref={containerRef}
-        className="relative w-full h-screen rounded-lg overflow-visible"
+        className="relative w-full h-screen rounded-lg overflow-hidden"
       >
         <canvas
           id="canvasId"
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full"
-          style={{ transform: 'translate(0px, 0px)' }}
         />
       </div>
       <div className="absolute top-4 left-4 flex gap-2">
