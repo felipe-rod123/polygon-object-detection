@@ -5,24 +5,16 @@ import { Button } from '@/components/ui/button';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { handleClear } from '@/utils/clearCanvasHandler';
-import {
-  handleExportCOCO,
-  handleExportPNG,
-  handleExportSVG,
-} from '@/utils/exportHandlers';
 import { setupPolygonDrawing } from '@/utils/polygonBuilder';
 import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
 import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
 import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
-import {
-  Canvas,
-  Circle,
-  FabricImage,
-  PencilBrush,
-  Polygon,
-  Rect,
-} from 'fabric';
+import { Canvas, Circle, PencilBrush, Polygon, Rect } from 'fabric';
 import { Undo2 } from 'lucide-react';
+import {
+  handleRemoveImageBackground,
+  handleSetImageBackground,
+} from '../../utils/backgroundImageHandler';
 
 interface CanvasDrawingProps {
   canvasMode: ToolToggleEnum;
@@ -94,29 +86,6 @@ const handleResetPan = (fabricRef: React.MutableRefObject<Canvas | null>) => {
   // TODO: implement
 };
 
-// TODO: check if it is working
-const handleSetImageBackground = (
-  fabricRef: React.MutableRefObject<Canvas | null>,
-  containerRef: React.RefObject<HTMLDivElement>,
-  imageUrl: string,
-) => {
-  const canvas = fabricRef.current;
-  const container = containerRef.current;
-  if (!canvas || !container) return;
-
-  FabricImage.fromURL(imageUrl).then(img => {
-    img.canvas = canvas;
-    canvas.backgroundImage = img;
-
-    const { width, height } = container.getBoundingClientRect();
-
-    canvas.width = width;
-    canvas.height = height;
-
-    canvas.renderAll();
-  });
-};
-
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
   canvasDrawTool,
@@ -157,19 +126,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       polygonRef,
     );
   }, [mode, drawTool, updateUndoStateCallback]);
-
-  const handleExportSVGCallback = useCallback(() => {
-    handleExportSVG(fabricRef);
-  }, []);
-
-  // TODO: export this, instead, for the exporters
-  const handleExportCOCOCallback = useCallback(() => {
-    handleExportCOCO(fabricRef);
-  }, []);
-
-  const handleExportPNGCallback = useCallback(() => {
-    handleExportPNG(fabricRef);
-  }, []);
 
   const handleResetZoomCallback = useCallback(() => {
     handleResetZoom(fabricRef);
@@ -329,6 +285,19 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
         <Button onClick={handleResetZoomCallback}>Reset zoom</Button>
         <Button onClick={handleResetPanCallback}>Reset pan</Button>
+        <Button
+          onClick={() =>
+            handleSetImageBackground(
+              fabricRef,
+              'https://upload.wikimedia.org/wikipedia/commons/a/aa/Oi_logo_2022.png',
+            )
+          }
+        >
+          Change bg img
+        </Button>
+        <Button onClick={() => handleRemoveImageBackground(fabricRef)}>
+          Remove bg img
+        </Button>
       </div>
     </div>
   );
