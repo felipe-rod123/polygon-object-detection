@@ -2,6 +2,14 @@ import ButtonAlertDialog from '@/components/button-alert-dialog';
 import ColorPicker from '@/components/color-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import type { DrawClass } from '@/types/DrawClass';
+import type { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import {
+  handleExportCOCO,
+  handleExportPNG,
+  handleExportSVG,
+} from '@/utils/exportHandlers';
+
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -11,14 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import type { DrawClass } from '@/types/DrawClass';
-import type { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
-import {
-  handleExportCOCO,
-  handleExportPNG,
-  handleExportSVG,
-} from '@/utils/exportHandlers';
-import { Canvas } from 'fabric';
+import type { Canvas } from 'fabric';
 import {
   Brush,
   Download,

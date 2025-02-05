@@ -1,3 +1,8 @@
+import type { Canvas } from 'fabric';
+import { ArrowLeft, Box } from 'lucide-react';
+import React from 'react';
+import { useNavigate } from 'react-router';
+
 import ButtonAlertDialog from '@/components/button-alert-dialog';
 import ThemeSwitchButton from '@/components/theme-switch-button';
 import { Button } from '@/components/ui/button';
@@ -11,12 +16,9 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Toaster } from '@/components/ui/toaster';
-import { useDrawHandlers } from '@/utils/drawHandlers';
-import { Canvas } from 'fabric';
-import { ArrowLeft, Box, Menu } from 'lucide-react';
-import type React from 'react';
-import { useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useClassManagement } from '@/hooks/useClassManagement';
+import { useDrawTools } from '@/hooks/useDrawTools';
+import { Menu } from 'lucide-react';
 import Toolbar from './components/canvas-toolbar';
 import CanvasDrawing from './DrawCanvas';
 
@@ -25,22 +27,25 @@ const DrawPage: React.FC = () => {
   const {
     brushSize,
     drawTool,
+    toggle,
+    handleBrushSizeChange,
+    handleDrawToolChange,
+    setToggle,
+  } = useDrawTools();
+
+  const {
     classes,
     selectedClass,
     newClassName,
     newClassColor,
-    toggle,
-    handleBrushSizeChange,
-    handleDrawToolChange,
     handleClassSelected,
     handleAddClass,
     handleDeleteClass,
     setNewClassName,
     setNewClassColor,
-    setToggle,
-  } = useDrawHandlers();
+  } = useClassManagement();
 
-  const fabricRef = useRef<Canvas | null>(null);
+  const fabricRef = React.useRef<Canvas | null>(null);
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">

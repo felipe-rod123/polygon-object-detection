@@ -1,31 +1,16 @@
 import { useToast } from '@/hooks/use-toast';
 import type { DrawClass } from '@/types/DrawClass';
-import { DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
-import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { getRandomColor } from '@/utils/getRandomColor';
 import { useCallback, useState } from 'react';
 
-export const useDrawHandlers = () => {
-  const [brushSize, setBrushSize] = useState(10);
-  const [drawTool, setDrawTool] = useState<DrawToolsEnum>(DrawToolsEnum.BRUSH);
+export const useClassManagement = () => {
   const [classes, setClasses] = useState<Map<string, DrawClass>>(new Map());
   const [colorSet, setColorSet] = useState<Set<string>>(new Set());
   const [selectedClass, setSelectedClass] = useState<DrawClass | null>(null);
   const [newClassName, setNewClassName] = useState('');
   const [newClassColor, setNewClassColor] = useState(getRandomColor());
-  const [toggle, setToggle] = useState<ToolToggleEnum>(ToolToggleEnum.DRAW);
 
   const { toast } = useToast();
-
-  const handleBrushSizeChange = (value: number[]) => {
-    setBrushSize(value[0]);
-  };
-
-  const handleDrawToolChange = (value: string) => {
-    if (Object.values(DrawToolsEnum).includes(value as DrawToolsEnum)) {
-      setDrawTool(value as DrawToolsEnum);
-    }
-  };
 
   const findClassByName = (className: string): DrawClass | null => {
     return classes.get(className) || null;
@@ -40,18 +25,32 @@ export const useDrawHandlers = () => {
 
     if (classes.has(newClassName)) {
       toast({
-        variant: 'destructive',
         title: 'Duplicate Class Name',
-        description: `A class with the name ${newClassName} already exists. Please choose a different name.`,
+        description: (
+          <>
+            A class with the name <strong>{newClassName}</strong> already
+            exists. Please choose a different name.
+          </>
+        ),
       });
       return;
     }
 
     if (colorSet.has(newClassColor)) {
       toast({
-        variant: 'destructive',
         title: 'Duplicate Class Color',
-        description: `A class with the color ${newClassColor} already exists. Please choose a different color.`,
+        description: (
+          <div className="flex flex-row items-center align-middle">
+            <div
+              className="w-4 h-4 p-4 m-4 rounded-full"
+              style={{ backgroundColor: newClassColor }}
+            />
+            <p>
+              A class with the color <strong>{newClassColor}</strong> already
+              exists. Please choose a different color.
+            </p>
+          </div>
+        ),
       });
       return;
     }
@@ -61,7 +60,7 @@ export const useDrawHandlers = () => {
     setColorSet(prev => new Set(prev).add(newClassColor));
     setNewClassName('');
     setNewClassColor(getRandomColor());
-  }, [newClassName, newClassColor, classes, colorSet]);
+  }, [newClassName, newClassColor, classes, colorSet, toast]);
 
   const handleDeleteClass = (className: string) => {
     setClasses(prevClasses => {
@@ -75,7 +74,12 @@ export const useDrawHandlers = () => {
         });
         toast({
           title: 'Class Deleted',
-          description: `The class ${className} has been successfully deleted.`,
+          description: (
+            <>
+              The class <strong>{className}</strong> has been successfully
+              deleted.
+            </>
+          ),
         });
       }
       newClasses.delete(className);
@@ -85,21 +89,15 @@ export const useDrawHandlers = () => {
   };
 
   return {
-    brushSize,
-    drawTool,
     classes,
     selectedClass,
     newClassName,
     newClassColor,
-    toggle,
-    handleBrushSizeChange,
-    handleDrawToolChange,
     findClassByName,
     handleClassSelected,
     handleAddClass,
     handleDeleteClass,
     setNewClassName,
     setNewClassColor,
-    setToggle,
   };
 };
