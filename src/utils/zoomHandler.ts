@@ -8,14 +8,16 @@ export const handleZoom = (
   if (!canvas) return;
 
   canvas.on('mouse:wheel', function (opt) {
-    var delta = opt.e.deltaY;
-    var zoom = canvas.getZoom();
-    zoom *= 0.999 ** delta;
-    if (zoom > 20) zoom = 20;
-    if (zoom < 0.01) zoom = 0.01;
-    canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
-    opt.e.preventDefault();
-    opt.e.stopPropagation();
+    if (opt.e.ctrlKey) {
+      opt.e.preventDefault();
+      var delta = opt.e.deltaY;
+      var zoom = canvas.getZoom();
+      zoom *= 0.999 ** delta;
+      if (zoom > 20) zoom = 20;
+      if (zoom < 0.01) zoom = 0.01;
+      canvas.zoomToPoint(new Point(opt.e.offsetX, opt.e.offsetY), zoom);
+      opt.e.stopPropagation();
+    }
   });
 };
 
