@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -39,64 +40,67 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
     'object',
   );
   const [imageUrl, setImageUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [importType, setImportType] = useState<'file' | 'url' | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+    if (e.target.files && e.target.files.length > 0) {
       setFiles(e.target.files);
+      setImportType('file');
+      setImageUrl('');
     }
   };
 
-  const handleUpload = async () => {
-    setLoading(true);
-    try {
-      if (files && files.length > 0) {
-        await Promise.all(
-          Array.from(files).map(
-            file =>
-              new Promise<void>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                  const result = e.target?.result;
-                  if (typeof result === 'string') {
-                    if (uploadType === 'background') {
-                      handleSetImageBackground(fabricRef, result);
-                    } else {
-                      handleAddImageObject(fabricRef, result);
-                    }
-                    resolve();
-                  } else {
-                    reject(new Error('Failed to read file'));
-                  }
-                };
-                reader.onerror = () => reject(new Error('Failed to read file'));
-                reader.readAsDataURL(file);
-              }),
-          ),
-        );
-      } else if (imageUrl) {
-        if (uploadType === 'background') {
-          handleSetImageBackground(fabricRef, imageUrl);
-        } else {
-          handleAddImageObject(fabricRef, imageUrl);
-        }
-      }
-      setOpen(false);
-    } catch (error) {
-      console.log(error);
-      toast({
-        title: 'Upload Error',
-        description: (error as Error).message,
-        variant: 'destructive',
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageUrl(e.target.value);
+    setImportType('url');
+    setFiles(null);
+  };
+
+  const handleUpload = () => {
+    if (importType === 'file' && files && files.length > 0) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const result = e.target?.result;
+          if (typeof result === 'string') {
+            if (uploadType === 'background') {
+              handleSetImageBackground(fabricRef, result);
+            } else {
+              handleAddImageObject(fabricRef, result);
+            }
+          }
+        };
+        reader.readAsDataURL(file);
       });
-    } finally {
-      setLoading(false);
+    } else if (importType === 'url' && imageUrl) {
+      const urlRegex =
+        /^(https?:\/\/|data:image\/[a-zA-Z]+;base64,)[\w\d+&@#/%?=~_|!:,.;-]+$/;
+      if (!urlRegex.test(imageUrl)) {
+        toast({
+          title: 'Invalid URL',
+          description: 'Please enter a valid URL',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (uploadType === 'background') {
+        handleSetImageBackground(fabricRef, imageUrl);
+      } else {
+        handleAddImageObject(fabricRef, imageUrl);
+      }
     }
+    handleDialogClose();
+  };
+
+  const handleDialogClose = () => {
+    setFiles(null);
+    setImageUrl('');
+    setImportType(null);
+    setUploadType('object');
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog onOpenChange={open => !open && handleDialogClose()}>
       <DialogTrigger asChild>
         <Button
           size="icon"
@@ -115,7 +119,7 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
         <div className="grid gap-4 py-4">
           <RadioGroup
             defaultValue="object"
-            onValueChange={(value: string) =>
+            onValueChange={value =>
               setUploadType(value as 'background' | 'object')
             }
           >
@@ -136,6 +140,7 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
               accept="image/*"
               onChange={handleFileChange}
               multiple={uploadType === 'object'}
+              disabled={importType === 'url'}
             />
           </div>
           <div className="grid w-full max-w-sm items-center gap-1.5">
@@ -145,13 +150,14 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
               type="url"
               placeholder="https://example.com/image.jpg"
               value={imageUrl}
-              onChange={e => setImageUrl(e.target.value)}
+              onChange={handleUrlChange}
+              disabled={importType === 'file'}
             />
           </div>
         </div>
-        <Button onClick={handleUpload} disabled={loading}>
-          {loading ? 'Uploading...' : 'Upload'}
-        </Button>
+        <DialogClose asChild>
+          <Button onClick={handleUpload}>Upload</Button>
+        </DialogClose>
       </DialogContent>
     </Dialog>
   );
