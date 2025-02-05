@@ -13,8 +13,8 @@ import {
 
 import TooltipToggleButton from '@/components/tooltip-toggle-button';
 import { useToast } from '@/hooks/use-toast';
-import { handleSetImageBackground } from '@/utils/backgroundImageHandler';
-import { handleAddImageObject } from '@/utils/objectImageHandler';
+import { handleSetImageBackground } from '@/utils/imageHandlers';
+import { handleAddImageObject } from '@/utils/imageHandlers';
 import { Canvas } from 'fabric';
 import FileUploadModalButton from './file-upload-modal-button';
 

@@ -1,6 +1,7 @@
 import { DrawClass } from '@/types/DrawClass';
 import { Canvas, FabricObject, Path, Polygon, Rect } from 'fabric';
 import saveAs from 'file-saver';
+import { imagePaths } from './imageHandlers';
 
 export const handleExportSVG = (
   fabricRef: React.MutableRefObject<Canvas | null>,
@@ -37,7 +38,7 @@ export const handleExportCOCO = (
       version: '1.0',
       year: new Date().getFullYear(),
       contributor: '',
-      date_created: new Date().toISOString(),
+      date_created: new Date().toISOString().split('T')[0].replace(/-/g, '/'),
     },
     licenses: [
       {
@@ -46,21 +47,19 @@ export const handleExportCOCO = (
         name: 'Attribution-NonCommercial-ShareAlike License',
       },
     ],
-    images: [
-      {
-        license: 1,
-        file_name: 'canvas_export.png',
-        coco_url: '',
-        height: imageHeight,
-        width: imageWidth,
-        date_captured: new Date().toISOString(),
-        flickr_url: '',
-        id: 1,
-      },
-    ],
+    images: imagePaths.map((path, index) => ({
+      license: 1,
+      file_name: path,
+      coco_url: '',
+      height: imageHeight,
+      width: imageWidth,
+      date_captured: new Date().toISOString().replace('T', ' ').split('.')[0],
+      flickr_url: '',
+      id: index + 1,
+    })),
     annotations: objects.map((obj: FabricObject) => {
       const bbox = obj.getBoundingRect();
-      const className = (obj.get('class') as string) || 'default';
+      const className = obj.classColorName || 'no-class';
       const categoryId = categoryMap.get(className) || 1;
 
       let segmentation: number[][] = [];

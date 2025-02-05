@@ -4,8 +4,8 @@ import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
-import { handleRemoveImageBackground } from '@/utils/backgroundImageHandler';
 import { handleClear } from '@/utils/clearCanvasHandler';
+import { handleRemoveImageBackground } from '@/utils/imageHandlers';
 import {
   copyObject,
   cutObject,
@@ -186,13 +186,11 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         },
         c: () => {
           if (event.ctrlKey) {
-            event.preventDefault();
             copyObject(fabricRef.current);
           }
         },
         v: () => {
           if (event.ctrlKey) {
-            event.preventDefault();
             pasteObject(fabricRef.current);
           }
         },
@@ -215,6 +213,11 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
             event.preventDefault();
             handleUndoCallback();
           }
+        },
+        Escape: () => {
+          // deselects all
+          fabricRef.current?.discardActiveObject();
+          fabricRef.current?.renderAll();
         },
       };
 
