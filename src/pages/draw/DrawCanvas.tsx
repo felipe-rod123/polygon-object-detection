@@ -12,6 +12,7 @@ import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
 import {
   Canvas,
   type Circle,
+  FabricImage,
   PencilBrush,
   Point,
   type Polygon,
@@ -38,7 +39,27 @@ interface CanvasDrawingProps {
   fabricRef: React.MutableRefObject<Canvas | null>;
 }
 
-// Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
+export const handleAddImageObject = (
+  fabricRef: React.MutableRefObject<Canvas | null>,
+  imageUrl: string,
+) => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
+
+  /**
+   * If you must load resources from another domain, you need to ensure that the server hosting those resources explicitly allows your domain to access them.
+   * This is done through Cross-Origin Resource Sharing (CORS) headers
+   */
+
+  FabricImage.fromURL(imageUrl, {
+    crossOrigin: 'anonymous',
+  }).then(img => {
+    img.canvas = canvas;
+    canvas.add(img);
+
+    canvas.renderAll();
+  });
+};
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
@@ -184,6 +205,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         );
       }
     } else if (mode.isPan) {
+      // TODO: Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
       canvas.defaultCursor = 'grab';
       canvas.hoverCursor = 'grab';
       canvas.selection = false;
@@ -334,6 +356,16 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           }
         >
           Change bg img
+        </Button>
+        <Button
+          onClick={() =>
+            handleAddImageObject(
+              fabricRef,
+              'https://upload.wikimedia.org/wikipedia/commons/a/aa/Oi_logo_2022.png',
+            )
+          }
+        >
+          Add img object
         </Button>
       </div>
     </div>
