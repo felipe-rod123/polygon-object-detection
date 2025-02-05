@@ -145,6 +145,7 @@ const DrawPage: React.FC = () => {
           strokeColor={selectedClass?.color ?? '#532ee3'}
           strokeWidth={brushSize}
           fabricRef={fabricRef}
+          selectedClass={selectedClass?.name || 'no-class'}
         />
       </main>
       <Toaster />

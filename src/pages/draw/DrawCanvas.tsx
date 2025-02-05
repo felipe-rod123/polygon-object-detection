@@ -30,6 +30,13 @@ import {
 import { Focus, ImageOff, Undo2, Video } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+/**
+ * Had to update the `node_modules/@erase2d/fabric/types/fabric.d.ts` file to include 3 extra props to my FabricObjects:
+ * classColorName?: string;
+ * objectCategory?: 'path' | 'polygon' | 'rectangle';
+ * objectId?: string;
+ */
+
 interface CanvasDrawingProps {
   canvasMode: ToolToggleEnum;
   canvasDrawTool: DrawToolsEnum;
@@ -37,6 +44,7 @@ interface CanvasDrawingProps {
   strokeColor: string;
   strokeWidth: number;
   fabricRef: React.MutableRefObject<Canvas | null>;
+  selectedClass: string;
 }
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
@@ -46,6 +54,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   strokeColor,
   strokeWidth,
   fabricRef,
+  selectedClass,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,6 +63,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   const [fillPolygon, setFillPolygon] = useState(false);
   const polygonRef = useRef<Polygon | null>(null);
   const pointsRef = useRef<Circle[]>([]);
+  const objectIdCounter = useRef(0);
 
   const mode = new ToolToggle(canvasMode);
   const drawTool = new DrawTool(canvasDrawTool);
@@ -116,24 +126,50 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
 
-    canvas.on('path:created', ({ path }) => {
-      path.erasable = true;
-      path.perPixelTargetFind = true;
-      path.objectCaching = true;
-      path.noScaleCache = true;
-      canvas.renderAll();
-      updateUndoStateCallback();
-    });
-
-    canvas.on('object:modified', updateUndoStateCallback);
-
-    updateZoomCallback();
-
     return () => {
       window.removeEventListener('resize', updateCanvasSize);
       canvas.dispose();
     };
-  }, [updateUndoStateCallback, updateZoomCallback, fabricRef]);
+  }, [fabricRef]);
+
+  useEffect(() => {
+    if (!fabricRef.current) return;
+
+    const canvas = fabricRef.current;
+
+    const handlePathCreated = ({ path }: { path: any }) => {
+      path.erasable = true;
+      path.perPixelTargetFind = true;
+      path.objectCaching = true;
+      path.noScaleCache = true;
+      path.classColorName = selectedClass;
+      path.objectCategory = 'path';
+      path.objectId = `path-${objectIdCounter.current++}`;
+      canvas.renderAll();
+      updateUndoStateCallback();
+
+      // console.log(
+      //   'Path created with classColorName:',
+      //   selectedClass,
+      //   ', objectCategory:',
+      //   path.objectCategory,
+      //   ', objectId:',
+      //   path.objectId,
+      // );
+    };
+
+    canvas.on('path:created', handlePathCreated);
+    canvas.on('object:modified', updateUndoStateCallback);
+
+    return () => {
+      canvas.off('path:created', handlePathCreated);
+      canvas.off('object:modified', updateUndoStateCallback);
+    };
+  }, [selectedClass, updateUndoStateCallback, fabricRef]);
+
+  useEffect(() => {
+    updateZoomCallback();
+  }, [updateZoomCallback]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -222,6 +258,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           strokeWidth,
           updateUndoStateCallback,
           setCanvasToggle,
+          selectedClass,
         );
       } else if (drawTool.isPolygon) {
         setupPolygonDrawing(
@@ -236,6 +273,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
             minDistance: 2,
             strokeColor,
             fillPolygon,
+            classColorName: selectedClass,
           },
         );
       }
@@ -350,6 +388,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     setCanvasToggle,
     fillPolygon,
     fabricRef,
+    selectedClass,
   ]);
 
   return (

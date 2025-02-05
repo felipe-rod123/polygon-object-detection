@@ -9,12 +9,15 @@ import {
   SerializedCircleProps,
 } from 'fabric';
 
+let objectIdCounter = 0;
+
 interface PolygonToolOptions {
   guidance: boolean;
   completeDistance: number;
   minDistance: number;
   strokeColor: string;
   fillPolygon: boolean;
+  classColorName: string;
 }
 
 export const setupPolygonDrawing = (
@@ -33,6 +36,7 @@ export const setupPolygonDrawing = (
     minDistance,
     strokeColor,
     fillPolygon = true,
+    classColorName,
   } = options;
 
   const createPolygon = () => {
@@ -41,7 +45,7 @@ export const setupPolygonDrawing = (
       y: point.top!,
     }));
 
-    return new Polygon(points, {
+    const polygon = new Polygon(points, {
       fill: fillPolygon
         ? Color.fromHex(strokeColor).setAlpha(0.3).toRgba()
         : 'transparent',
@@ -50,7 +54,12 @@ export const setupPolygonDrawing = (
       erasable: true,
       objectCaching: true,
       noScaleCache: true,
+      classColorName: classColorName,
+      objectCategory: 'polygon',
+      objectId: `polygon-${objectIdCounter++}`,
     });
+
+    return polygon;
   };
 
   // use a²=b²+c² to check if the distance is less than the accepted complete distance
@@ -72,6 +81,15 @@ export const setupPolygonDrawing = (
       canvas.add(polygon);
       canvas.renderAll();
 
+      // console.log(
+      //   'Polygon created with classColorName:',
+      //   classColorName,
+      //   ', objectCategory:',
+      //   polygon.objectCategory,
+      //   ', objectId:',
+      //   polygon.objectId,
+      // );
+
       setCanvasToggle(ToolToggleEnum.SELECT);
       pointsRef.current = [];
       polygonRef.current = null;
@@ -87,7 +105,6 @@ export const setupPolygonDrawing = (
     const y = pointer.y;
 
     if (pointsRef.current.length === 0) {
-      // reference starting point
       const firstPoint = new Circle({
         left: x,
         top: y,
@@ -98,6 +115,9 @@ export const setupPolygonDrawing = (
         erasable: true,
         objectCaching: true,
         noScaleCache: true,
+        classColorName: classColorName,
+        objectCategory: 'path',
+        objectId: `point-${objectIdCounter++}`,
       });
       canvas.add(firstPoint);
       pointsRef.current.push(firstPoint);
@@ -114,11 +134,13 @@ export const setupPolygonDrawing = (
         erasable: true,
         objectCaching: true,
         noScaleCache: true,
+        classColorName: classColorName,
+        objectCategory: 'path',
+        objectId: `point-${objectIdCounter++}`,
       });
       canvas.add(newPoint);
       pointsRef.current.push(newPoint);
 
-      // Update or create the polygon
       if (polygonRef.current) {
         canvas.remove(polygonRef.current);
       }
@@ -130,7 +152,6 @@ export const setupPolygonDrawing = (
     updateUndoState();
   });
 
-  // traces a line connecting the first and last points to to the mouse, to help the user during polygon creation
   if (guidance) {
     canvas.on('mouse:move', options => {
       if (pointsRef.current.length === 0) return;
@@ -158,6 +179,9 @@ export const setupPolygonDrawing = (
         erasable: true,
         objectCaching: true,
         noScaleCache: true,
+        classColorName: classColorName,
+        objectCategory: 'polygon',
+        objectId: `polygon-${objectIdCounter++}`,
       });
 
       canvas.add(polygonRef.current);

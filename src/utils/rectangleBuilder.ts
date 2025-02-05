@@ -1,12 +1,15 @@
 import { Canvas, Rect } from 'fabric';
 import { ToolToggleEnum } from '../types/enums/ToolToggleEnum';
 
+let objectIdCounter = 0;
+
 export const setupRectangleDrawing = (
   canvas: Canvas,
   strokeColor: string,
   strokeWidth: number,
   updateUndoState: () => void,
   setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>,
+  classColorName: string,
 ) => {
   let isDrawing = false;
   let startX = 0;
@@ -30,7 +33,19 @@ export const setupRectangleDrawing = (
       erasable: true,
       objectCaching: true,
       noScaleCache: true,
+      classColorName: classColorName,
+      objectCategory: 'rectangle',
+      objectId: `rectangle-${objectIdCounter++}`,
     });
+
+    // console.log(
+    //   'Rectangle created with classColorName:',
+    //   classColorName,
+    //   ', objectCategory:',
+    //   rect.objectCategory,
+    //   ', objectId:',
+    //   rect.objectId,
+    // );
 
     canvas.add(rect);
   });
