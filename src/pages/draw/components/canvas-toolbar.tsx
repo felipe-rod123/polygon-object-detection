@@ -4,11 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { DrawClass } from '@/types/DrawClass';
 import type { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
-import {
-  handleExportCOCO,
-  handleExportPNG,
-  handleExportSVG,
-} from '@/utils/exportHandlers';
+import { handleExportCOCO, handleExportPNG } from '@/utils/exportHandlers';
 
 import { Label } from '@/components/ui/label';
 import {
@@ -25,7 +21,6 @@ import {
   Download,
   Eraser,
   Image,
-  PenTool,
   Square,
   Tangent,
   X,
@@ -73,7 +68,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
   return (
     <>
       <div className="flex md:justify-start justify-center">
-        <ToolSelectorToggleGroup toggle={toggle} setToggle={setToggle} />
+        <ToolSelectorToggleGroup
+          toggle={toggle}
+          setToggle={setToggle}
+          fabricRef={fabricRef}
+        />
       </div>
       <div className="space-y-6">
         {toggle === 'draw' && (
@@ -215,13 +214,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
           >
             <Image className="mr-2 h-4 w-4" /> Save as PNG
           </Button>
-          <Button
+          {/* <Button
             className="w-full"
             variant="outline"
             onClick={() => handleExportSVG(fabricRef)}
           >
             <PenTool className="mr-2 h-4 w-4" /> Save as SVG
-          </Button>
+          </Button> */}
         </div>
       </div>
     </>

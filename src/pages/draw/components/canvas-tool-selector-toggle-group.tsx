@@ -4,7 +4,6 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 
-import { Button } from '@/components/ui/button';
 import {
   Tooltip,
   TooltipContent,
@@ -12,7 +11,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import TooltipToggleButton from '@/components/tooltip-toggle-button';
 import { useToast } from '@/hooks/use-toast';
+import { handleSetImageBackground } from '@/utils/backgroundImageHandler';
+import { handleAddImageObject } from '@/utils/objectImageHandler';
+import { Canvas } from 'fabric';
+import FileUploadModalButton from './file-upload-modal-button';
 
 interface toolToogleConfigs {
   value: ToolToggleEnum;
@@ -41,9 +45,11 @@ const toolToggleGroup: toolToogleConfigs[] = [
 export default function ToolSelectorToggleGroup({
   toggle,
   setToggle,
+  fabricRef,
 }: {
   toggle: ToolToggleEnum;
   setToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>;
+  fabricRef: React.MutableRefObject<Canvas | null>;
 }) {
   const { toast } = useToast();
 
@@ -87,30 +93,27 @@ export default function ToolSelectorToggleGroup({
             </Tooltip>
           ))}
         </ToggleGroup>
-        <Tooltip key="save">
-          <TooltipTrigger asChild>
-            <Button
-              size="icon"
-              className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
-              onClick={() => {
-                toast({
-                  title: 'Save not implemented yet',
-                  description: 'Your files have not been saved locally.',
-                  variant: 'destructive',
-                });
-              }}
-            >
-              <Save className="h-4 w-4 text-black dark:text-white" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Save files locally</p>
-          </TooltipContent>
-        </Tooltip>
+
+        <TooltipToggleButton
+          keyValue="save"
+          onClick={() => {
+            toast({
+              title: 'Save not implemented yet',
+              description: 'Your files have not been saved locally.',
+              variant: 'destructive',
+            });
+          }}
+          icon={<Save className="h-4 w-4 text-black dark:text-white" />}
+          tooltipText="Save files locally"
+        />
+
         <Tooltip key="import">
-          <TooltipTrigger asChild>
-            oi
-            {/* <FileUploadModalButton /> */}
+          <TooltipTrigger>
+            <FileUploadModalButton
+              fabricRef={fabricRef}
+              handleSetImageBackground={handleSetImageBackground}
+              handleAddImageObject={handleAddImageObject}
+            />
           </TooltipTrigger>
           <TooltipContent>
             <p>Import file</p>

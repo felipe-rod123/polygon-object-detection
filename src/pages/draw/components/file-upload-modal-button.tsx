@@ -101,7 +101,7 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
 
   return (
     <Dialog onOpenChange={open => !open && handleDialogClose()}>
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button
           size="icon"
           className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
@@ -155,7 +155,7 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
             />
           </div>
         </div>
-        <DialogClose asChild>
+        <DialogClose>
           <Button onClick={handleUpload}>Upload</Button>
         </DialogClose>
       </DialogContent>

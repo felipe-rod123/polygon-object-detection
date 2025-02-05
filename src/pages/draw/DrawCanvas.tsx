@@ -1,6 +1,9 @@
+import TooltipToggleButton from '@/components/tooltip-toggle-button';
 import { Button } from '@/components/ui/button';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import { handleRemoveImageBackground } from '@/utils/backgroundImageHandler';
 import { handleClear } from '@/utils/clearCanvasHandler';
 import { setupPolygonDrawing } from '@/utils/polygonBuilder';
 import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
@@ -17,18 +20,6 @@ import {
 } from 'fabric';
 import { Focus, ImageOff, Undo2, Video } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../../components/ui/tooltip';
-import {
-  handleRemoveImageBackground,
-  handleSetImageBackground,
-} from '../../utils/backgroundImageHandler';
-import { handleAddImageObject } from '../../utils/objectImageHandler';
-import FileUploadModalButton from './components/file-upload-modal-button';
 
 interface CanvasDrawingProps {
   canvasMode: ToolToggleEnum;
@@ -89,6 +80,10 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       fabricRef.current.absolutePan(new Point(0, 0));
       fabricRef.current.renderAll();
     }
+  }, [fabricRef]);
+
+  const handleRemoveImageBackgroundCalback = useCallback(() => {
+    handleRemoveImageBackground(fabricRef);
   }, [fabricRef]);
 
   useEffect(() => {
@@ -276,60 +271,31 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       <div className="absolute top-4 left-4 flex gap-2">
         <TooltipProvider>
           <Button onClick={handleClearCallback}>Clear canvas</Button>
+
           <Button onClick={handleUndoCallback} disabled={!canUndo}>
             <Undo2 className="h-4 w-4" />
             Undo
           </Button>
 
-          <Tooltip key="reset-zoom">
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
-                onClick={handleResetZoomCallback}
-              >
-                <Video className="h-4 w-4 text-black dark:text-white" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Reset zoom</p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipToggleButton
+            keyValue="reset-zoom"
+            onClick={handleResetZoomCallback}
+            icon={<Video className="h-4 w-4 text-black dark:text-white" />}
+            tooltipText="Reset zoom"
+          />
 
-          <Tooltip key="reset-pan">
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
-                onClick={handleResetPanCallback}
-              >
-                <Focus className="h-4 w-4 text-black dark:text-white" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Reset mouse pan</p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipToggleButton
+            keyValue="reset-pan"
+            onClick={handleResetPanCallback}
+            icon={<Focus className="h-4 w-4 text-black dark:text-white" />}
+            tooltipText="Reset mouse pan"
+          />
 
-          <Tooltip key="remove-bg">
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
-                onClick={() => handleRemoveImageBackground(fabricRef)}
-              >
-                <ImageOff className="h-4 w-4 text-black dark:text-white" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Remove background</p>
-            </TooltipContent>
-          </Tooltip>
-
-          <FileUploadModalButton
-            fabricRef={fabricRef}
-            handleSetImageBackground={handleSetImageBackground}
-            handleAddImageObject={handleAddImageObject}
+          <TooltipToggleButton
+            keyValue="remove-bg"
+            onClick={handleRemoveImageBackgroundCalback}
+            icon={<ImageOff className="h-4 w-4 text-black dark:text-white" />}
+            tooltipText="Remove background"
           />
         </TooltipProvider>
       </div>
