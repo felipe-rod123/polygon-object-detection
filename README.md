@@ -4,19 +4,18 @@ Felipe Rodrigues' front-end take-home test.
 
 ## Polygon 🖌️
 
-_Polygon_ is a semantic segmentation labeling tool designed to facilitate the creation of high-quality annotations for AI computer vision models. This tool provides a user-friendly interface for annotating images with various tools and features, ensuring precision and efficiency in the labeling process.
+_Polygon_ is an object detection (segmentation) labeling tool designed to facilitate the creation of high-quality annotations for AI computer vision models.
 
 ### Features ✅
 
 #### Annotation Options
 
-- **Brush Annotation**: Toggle between brush annotation and polygon annotation modes.
-- **Brush Size**: Allow users to choose the brush size when in brush mode.
+- **Brush Annotation**: Toggle between brush, polygon and rectangle annotation modes.
+- **Brush Size**: Allow users to choose the stroke size when in draw mode.
 
 #### Class Management
 
 - **Define Classes**: Provide a way to define class names and assign a unique color to each class.
-- **Color Management**: Ensure no overlap of colors (pixels should only belong to one class).
 
 #### Editing Tools
 
@@ -30,7 +29,7 @@ _Polygon_ is a semantic segmentation labeling tool designed to facilitate the cr
 
 #### Export Features
 
-- **Export Annotations**: Provide an option to export the annotations in COCO format.
+- **Export Annotations**: Provide an option to export the annotations in COCO of PNG file formats.
 
 ### Installation Prerequisites 🛠️
 

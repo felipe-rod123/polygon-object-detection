@@ -120,12 +120,13 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     };
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
+    updateZoomCallback();
 
     return () => {
       window.removeEventListener('resize', updateCanvasSize);
       canvas.dispose();
     };
-  }, [fabricRef]);
+  }, [fabricRef, updateZoomCallback]);
 
   useEffect(() => {
     if (!fabricRef.current) return;
@@ -161,10 +162,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       canvas.off('object:modified', updateUndoStateCallback);
     };
   }, [selectedClass, updateUndoStateCallback, fabricRef]);
-
-  useEffect(() => {
-    updateZoomCallback();
-  }, [updateZoomCallback]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

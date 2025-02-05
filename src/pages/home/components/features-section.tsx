@@ -11,13 +11,13 @@ const features = [
   {
     title: 'Advanced Annotation',
     description:
-      'Seamlessly switch between brush and polygon modes for unparalleled precision.',
+      'Seamlessly switch between brush, rectangle and polygon modes for unparalleled precision.',
     icon: <Brush className="h-8 w-8 text-zinc-700 dark:text-zinc-300" />,
   },
   {
     title: 'Intelligent Class Management',
     description:
-      'Define and manage classes with unique color assignments, ensuring zero overlap.',
+      'Define and manage classes with unique color assignments.',
     icon: <Palette className="h-8 w-8 text-zinc-700 dark:text-zinc-300" />,
   },
   {
