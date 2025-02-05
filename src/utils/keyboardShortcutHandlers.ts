@@ -1,4 +1,5 @@
-import { ActiveSelection, Canvas, FabricObject } from 'fabric';
+import { ActiveSelection, Canvas, FabricImage, FabricObject } from 'fabric';
+import { handleRemoveImageFromExports } from './imageHandlers';
 
 let _clipboard: FabricObject | null = null;
 
@@ -11,6 +12,12 @@ export const deleteObject = (canvas: Canvas | null) => {
 
   if (activeObject instanceof ActiveSelection) {
     activeObject.forEachObject(obj => {
+      // remove image from the COCO export `images` section
+      if (obj && obj.type === 'image') {
+        const imageUrl = (obj as FabricImage).getSrc();
+        handleRemoveImageFromExports(imageUrl);
+      }
+
       canvas.remove(obj);
     });
   } else {

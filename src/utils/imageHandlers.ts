@@ -64,3 +64,12 @@ export const handleAddImageObject = (
     console.error('Error adding image object to canvas:\n', error);
   }
 };
+
+export const handleRemoveImageFromExports = (imageUrl: string) => {
+  const index = imagePaths.indexOf(imageUrl);
+
+  // if imageUrl is not found, indexOf returns -1.
+  if (index > -1) {
+    imagePaths.splice(index, 1);
+  }
+};

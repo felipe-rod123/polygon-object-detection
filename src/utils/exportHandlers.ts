@@ -60,7 +60,7 @@ export const handleExportCOCO = (
     annotations: objects.map((obj: FabricObject) => {
       const bbox = obj.getBoundingRect();
       const className = obj.classColorName || 'no-class';
-      const categoryId = categoryMap.get(className) || 1;
+      const categoryId = categoryMap.get(className) || 1; // Deleted classes with existing objects will have this id. Maybe use a negative number for invalid values? Or delete canvas objects with the deleted class?
 
       let segmentation: number[][] = [];
       if (obj instanceof Polygon) {
