@@ -24,6 +24,7 @@ import {
   Point,
   type Polygon,
   Rect,
+  TEvent,
 } from 'fabric';
 import { Focus, ImageOff, Undo2, Video } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -44,7 +45,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   strokeColor,
   strokeWidth,
   fabricRef,
-}: CanvasDrawingProps) => {
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -89,7 +90,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     }
   }, [fabricRef]);
 
-  const handleRemoveImageBackgroundCalback = useCallback(() => {
+  const handleRemoveImageBackgroundCallback = useCallback(() => {
     handleRemoveImageBackground(fabricRef);
   }, [fabricRef]);
 
@@ -148,48 +149,51 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!fabricRef.current) return;
 
-      switch (event.key) {
-        case 'Delete':
-        case 'Backspace':
+      const keyActions: Record<string, () => void> = {
+        Delete: () => {
           deleteObject(fabricRef.current);
           updateUndoStateCallback();
-          break;
-        case 'c':
-          event.preventDefault();
+        },
+        Backspace: () => {
+          deleteObject(fabricRef.current);
+          updateUndoStateCallback();
+        },
+        c: () => {
           if (event.ctrlKey) {
+            event.preventDefault();
             copyObject(fabricRef.current);
           }
-          break;
-        case 'v':
-          event.preventDefault();
+        },
+        v: () => {
           if (event.ctrlKey) {
+            event.preventDefault();
             pasteObject(fabricRef.current);
             updateUndoStateCallback();
           }
-          break;
-        case 'x':
-          event.preventDefault();
+        },
+        x: () => {
           if (event.ctrlKey) {
+            event.preventDefault();
             cutObject(fabricRef.current);
             updateUndoStateCallback();
           }
-          break;
-        case 'd':
-          event.preventDefault(); // used to avoid browser default shortcut for this key. For example, on Chrome, this is used to save a bookmark, instead of duplicating the item.
+        },
+        d: () => {
           if (event.ctrlKey) {
+            event.preventDefault();
             duplicateObject(fabricRef.current);
             updateUndoStateCallback();
           }
-          break;
-        case 'z':
-          event.preventDefault();
+        },
+        z: () => {
           if (event.ctrlKey) {
+            event.preventDefault();
             handleUndoCallback();
           }
-          break;
-        default:
-          break;
-      }
+        },
+      };
+
+      if (keyActions[event.key]) keyActions[event.key]();
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -212,6 +216,8 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     canvas.off('mouse:up' as any);
 
     if (mode.isDraw) {
+      canvas.defaultCursor = 'default';
+
       if (drawTool.isBrush) {
         const pencilBrush = new PencilBrush(canvas);
         pencilBrush.width = strokeWidth;
@@ -241,7 +247,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       }
     } else if (mode.isPan) {
       // TODO: Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
-      canvas.defaultCursor = 'grab';
       canvas.hoverCursor = 'grab';
       canvas.selection = false;
       canvas.forEachObject(obj => {
@@ -288,11 +293,50 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         }
       });
 
-      canvas.on('mouse:up', () => {
+      const handleMouseUp = () => {
         isDragging = false;
         canvas.defaultCursor = 'grab';
         canvas.renderAll();
-      });
+      };
+
+      const handleMouseDown = (opt: TEvent<MouseEvent | TouchEvent>) => {
+        const evt = opt.e;
+        isDragging = true;
+        canvas.selection = false;
+        if (evt instanceof MouseEvent) {
+          lastPosX = evt.clientX;
+          lastPosY = evt.clientY;
+        } else if (evt instanceof TouchEvent) {
+          lastPosX = evt.touches[0].clientX;
+          lastPosY = evt.touches[0].clientY;
+        }
+        canvas.defaultCursor = 'grabbing';
+        canvas.renderAll();
+      };
+
+      const handleMouseMove = (opt: TEvent<MouseEvent | TouchEvent>) => {
+        if (isDragging) {
+          const evt = opt.e;
+          const vpt = canvas.viewportTransform;
+          if (!vpt) return;
+          if (evt instanceof MouseEvent) {
+            vpt[4] += evt.clientX - lastPosX;
+            vpt[5] += evt.clientY - lastPosY;
+            lastPosX = evt.clientX;
+            lastPosY = evt.clientY;
+          } else if (evt instanceof TouchEvent) {
+            vpt[4] += evt.touches[0].clientX - lastPosX;
+            vpt[5] += evt.touches[0].clientY - lastPosY;
+            lastPosX = evt.touches[0].clientX;
+            lastPosY = evt.touches[0].clientY;
+          }
+          canvas.requestRenderAll();
+        }
+      };
+
+      canvas.on('mouse:down', handleMouseDown);
+      canvas.on('mouse:move', handleMouseMove);
+      canvas.on('mouse:up', handleMouseUp);
     } else {
       // Set up selection mode
       canvas.selection = true;
@@ -355,7 +399,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
 
           <TooltipToggleButton
             keyValue="remove-bg"
-            onClick={handleRemoveImageBackgroundCalback}
+            onClick={handleRemoveImageBackgroundCallback}
             icon={<ImageOff className="h-4 w-4 text-black dark:text-white" />}
             tooltipText="Remove background"
           />
