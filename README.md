@@ -6,6 +6,15 @@ Felipe Rodrigues' front-end take-home test.
 
 _Polygon_ is an object detection (segmentation) labeling tool designed to facilitate the creation of high-quality annotations for AI computer vision models.
 
+
+### Example Usage 📸
+
+![Example 1](src/assets/images/example.png)
+_Caption: demonstrating the annotation capabilities of the Polygon tool._
+
+![Example 2](src/assets/images/example2.png)
+_Caption: example of the image importer in action._
+
 ### Features ✅
 
 #### Annotation Options
