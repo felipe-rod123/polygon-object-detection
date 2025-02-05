@@ -80,6 +80,43 @@ const pasteObject = async (canvas: Canvas | null) => {
   }
 };
 
+const cutObject = (canvas: Canvas | null) => {
+  if (!canvas) return;
+
+  const activeObject = canvas?.getActiveObject();
+
+  if (!activeObject) return;
+  activeObject.clone().then((cloned: FabricObject) => {
+    _clipboard = cloned;
+    deleteObject(canvas);
+  });
+};
+
+const duplicateObject = async (canvas: Canvas | null) => {
+  if (_clipboard && canvas) {
+    const clonedObj = await _clipboard.clone();
+    canvas.discardActiveObject();
+    clonedObj.set({
+      left: clonedObj.left + 10,
+      top: clonedObj.top + 10,
+      evented: true,
+    });
+    if (clonedObj instanceof ActiveSelection) {
+      clonedObj.canvas = canvas;
+      clonedObj.forEachObject(obj => {
+        canvas.add(obj);
+      });
+      clonedObj.setCoords();
+    } else {
+      canvas.add(clonedObj);
+    }
+    _clipboard.top += 10;
+    _clipboard.left += 10;
+    canvas.setActiveObject(clonedObj);
+    canvas.requestRenderAll();
+  }
+};
+
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
   canvasDrawTool,
@@ -197,13 +234,31 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           deleteObject(fabricRef.current);
           break;
         case 'c':
+          event.preventDefault();
+
           if (event.ctrlKey) {
             copyObject(fabricRef.current);
           }
           break;
         case 'v':
+          event.preventDefault();
+
           if (event.ctrlKey) {
             pasteObject(fabricRef.current);
+          }
+          break;
+        case 'x':
+          event.preventDefault();
+
+          if (event.ctrlKey) {
+            cutObject(fabricRef.current);
+          }
+          break;
+        case 'd':
+          event.preventDefault();
+
+          if (event.ctrlKey) {
+            duplicateObject(fabricRef.current);
           }
           break;
         default:
