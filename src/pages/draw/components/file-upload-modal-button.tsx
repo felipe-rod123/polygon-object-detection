@@ -41,12 +41,22 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
   );
   const [imageUrl, setImageUrl] = useState('');
   const [importType, setImportType] = useState<'file' | 'url' | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFiles(e.target.files);
       setImportType('file');
       setImageUrl('');
+
+      const firstFile = e.target.files[0];
+      if (firstFile.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => setPreview(e.target?.result as string);
+        reader.readAsDataURL(firstFile);
+      } else {
+        setPreview(null);
+      }
     }
   };
 
@@ -97,11 +107,12 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
     setImageUrl('');
     setImportType(null);
     setUploadType('object');
+    setPreview(null);
   };
 
   return (
     <Dialog onOpenChange={open => !open && handleDialogClose()}>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button
           size="icon"
           className="bg-transparent border border-zinc-300 rounded-md p-2 hover:bg-zinc-100 dark:border-slate-800 dark:hover:bg-zinc-800 active:bg-main-400 dark:active:bg-main-600"
@@ -155,9 +166,43 @@ const FileUploadModalButton: React.FC<FileUploadModalButtonProps> = ({
             />
           </div>
         </div>
-        <DialogClose>
-          <Button onClick={handleUpload}>Upload</Button>
-        </DialogClose>
+        {preview && (
+          <div className="relative w-full h-40 -my-2">
+            <img
+              src={preview || '/placeholder.png'}
+              alt="File preview"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        )}
+        {files && !preview && (
+          <div className="bg-zinc-800 text-zinc-100 p-4 rounded">
+            {Array.from(files).map((file, index) => (
+              <div key={index} className="flex justify-between">
+                <p>{file.name}</p>
+                <p>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-row w-full justify-end space-x-2 mt-4">
+          <DialogClose asChild>
+            <Button
+              variant="secondary"
+              className="hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            >
+              Cancel
+            </Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button
+              onClick={handleUpload}
+              className="px-8 bg-main-500 text-zinc-50 hover:bg-main-700"
+            >
+              Upload
+            </Button>
+          </DialogClose>
+        </div>
       </DialogContent>
     </Dialog>
   );
