@@ -1,3 +1,4 @@
+import { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import {
   Canvas,
   Circle,
@@ -7,18 +8,79 @@ import {
   Polygon,
   SerializedCircleProps,
 } from 'fabric';
-import { ToolToggleEnum } from '../types/enums/ToolToggleEnum';
+
+interface PolygonToolOptions {
+  guidance: boolean;
+  completeDistance: number;
+  minDistance: number;
+  strokeColor: string;
+  fillPolygon: boolean;
+}
 
 export const setupPolygonDrawing = (
   canvas: Canvas,
   pointsRef: React.MutableRefObject<
     Circle<Partial<CircleProps>, SerializedCircleProps, ObjectEvents>[]
   >,
-  strokeColor: string,
   polygonRef: React.MutableRefObject<Polygon | null>,
   setCanvasToggle: React.Dispatch<React.SetStateAction<ToolToggleEnum>>,
   updateUndoState: () => void,
+  options: PolygonToolOptions,
 ) => {
+  const {
+    guidance = true,
+    completeDistance,
+    minDistance,
+    strokeColor,
+    fillPolygon = true,
+  } = options;
+
+  const createPolygon = () => {
+    const points = pointsRef.current.map(point => ({
+      x: point.left!,
+      y: point.top!,
+    }));
+
+    return new Polygon(points, {
+      fill: fillPolygon
+        ? Color.fromHex(strokeColor).setAlpha(0.3).toRgba()
+        : 'transparent',
+      stroke: strokeColor,
+      strokeWidth: 2,
+      erasable: true,
+      objectCaching: true,
+      noScaleCache: true,
+    });
+  };
+
+  // use a²=b²+c² to check if the distance is less than the accepted complete distance
+  const autoComplete = (x: number, y: number) => {
+    const distanceToFirst = Math.sqrt(
+      Math.pow(x - pointsRef.current[0].left!, 2) +
+        Math.pow(y - pointsRef.current[0].top!, 2),
+    );
+
+    if (
+      distanceToFirst < completeDistance &&
+      pointsRef.current.length > minDistance
+    ) {
+      const polygon = createPolygon();
+      // can't edit after polygon is created, but logic to edit would require a more complex implentation
+      // (perhaps new drawTool mode, adding groups, changing COCO export to iscrowd, so on)
+      canvas.remove(...pointsRef.current);
+      if (polygonRef.current) canvas.remove(polygonRef.current);
+      canvas.add(polygon);
+      canvas.renderAll();
+
+      setCanvasToggle(ToolToggleEnum.SELECT);
+      pointsRef.current = [];
+      polygonRef.current = null;
+      updateUndoState();
+      return true;
+    }
+    return false;
+  };
+
   canvas.on('mouse:down', options => {
     const pointer = canvas.getPointer(options.e);
     const x = pointer.x;
@@ -40,76 +102,67 @@ export const setupPolygonDrawing = (
       canvas.add(firstPoint);
       pointsRef.current.push(firstPoint);
     } else {
-      // const lastPoint = pointsRef.current[pointsRef.current.length - 1];
-      const distanceToFirst = Math.sqrt(
-        Math.pow(x - pointsRef.current[0].left!, 2) +
-          Math.pow(y - pointsRef.current[0].top!, 2),
-      );
+      if (autoComplete(x, y)) return;
 
-      if (distanceToFirst < 10 && pointsRef.current.length > 2) {
-        // close the polygon
-        const points = pointsRef.current.map(point => ({
-          x: point.left!,
-          y: point.top!,
-        }));
+      const newPoint = new Circle({
+        left: x,
+        top: y,
+        radius: 3,
+        fill: 'blue',
+        originX: 'center',
+        originY: 'center',
+        erasable: true,
+        objectCaching: true,
+        noScaleCache: true,
+      });
+      canvas.add(newPoint);
+      pointsRef.current.push(newPoint);
 
-        const polygon = new Polygon(points, {
-          fill: Color.fromHex(strokeColor).setAlpha(0.3).toRgba(),
-          stroke: strokeColor,
-          strokeWidth: 2,
-          erasable: true,
-          objectCaching: true,
-          noScaleCache: true,
-        });
-
-        canvas.remove(...pointsRef.current);
-        if (polygonRef.current) canvas.remove(polygonRef.current); // Remove the polygon editing line
-        canvas.add(polygon);
-        canvas.renderAll();
-
-        // Reset for next polygon
-        setCanvasToggle(ToolToggleEnum.SELECT);
-        pointsRef.current = [];
-        polygonRef.current = null;
-      } else {
-        // add new point
-        const newPoint = new Circle({
-          left: x,
-          top: y,
-          radius: 3,
-          fill: 'blue',
-          originX: 'center',
-          originY: 'center',
-          erasable: true,
-          objectCaching: true,
-          noScaleCache: true,
-        });
-        canvas.add(newPoint);
-        pointsRef.current.push(newPoint);
-
-        // Update or create the polygon
-        if (polygonRef.current) {
-          canvas.remove(polygonRef.current);
-        }
-
-        const points = pointsRef.current.map(point => ({
-          x: point.left!,
-          y: point.top!,
-        }));
-
-        polygonRef.current = new Polygon(points, {
-          fill: 'transparent',
-          stroke: 'blue',
-          strokeWidth: 2,
-          erasable: true,
-          objectCaching: true,
-          noScaleCache: true,
-        });
-
-        canvas.add(polygonRef.current);
-        canvas.renderAll();
+      // Update or create the polygon
+      if (polygonRef.current) {
+        canvas.remove(polygonRef.current);
       }
+
+      polygonRef.current = createPolygon();
+      canvas.add(polygonRef.current);
+      canvas.renderAll();
     }
     updateUndoState();
   });
+
+  // traces a line connecting the first and last points to to the mouse, to help the user during polygon creation
+  if (guidance) {
+    canvas.on('mouse:move', options => {
+      if (pointsRef.current.length === 0) return;
+
+      const pointer = canvas.getPointer(options.e);
+      const x = pointer.x;
+      const y = pointer.y;
+
+      if (polygonRef.current) {
+        canvas.remove(polygonRef.current);
+      }
+
+      const points = pointsRef.current.map(point => ({
+        x: point.left!,
+        y: point.top!,
+      }));
+      points.push({ x, y });
+
+      polygonRef.current = new Polygon(points, {
+        fill: fillPolygon
+          ? Color.fromHex(strokeColor).setAlpha(0.3).toRgba()
+          : 'transparent',
+        stroke: strokeColor,
+        strokeWidth: 2,
+        erasable: true,
+        objectCaching: true,
+        noScaleCache: true,
+      });
+
+      canvas.add(polygonRef.current);
+      canvas.renderAll();
+    });
+    updateUndoState();
+  }
 };

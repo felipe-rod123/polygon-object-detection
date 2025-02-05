@@ -1,5 +1,6 @@
 import TooltipToggleButton from '@/components/tooltip-toggle-button';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
@@ -50,6 +51,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [canUndo, setCanUndo] = useState(false);
+  const [fillPolygon, setFillPolygon] = useState(false);
   const polygonRef = useRef<Polygon | null>(null);
   const pointsRef = useRef<Circle[]>([]);
 
@@ -114,16 +116,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     updateCanvasSize();
     window.addEventListener('resize', updateCanvasSize);
 
-    /**
-     * `perPixelTargetFind`
-     * By default, all Fabric objects on canvas can be dragged by the bounding box. However, in order to click/drag objects only by its actual contents, we need to set “perPixelTargetFind” as true.
-     *
-     * `noScaleCache`
-     * During the scaling transformation the object is not regenerated.
-     */
-
-    // make sure all drawn paths are erasable
-
     canvas.on('path:created', ({ path }) => {
       path.erasable = true;
       path.perPixelTargetFind = true;
@@ -133,12 +125,10 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       updateUndoStateCallback();
     });
 
-    // listen for object modifications
     canvas.on('object:modified', updateUndoStateCallback);
 
     updateZoomCallback();
 
-    // cleanup
     return () => {
       window.removeEventListener('resize', updateCanvasSize);
       canvas.dispose();
@@ -168,7 +158,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           if (event.ctrlKey) {
             event.preventDefault();
             pasteObject(fabricRef.current);
-            updateUndoStateCallback();
           }
         },
         x: () => {
@@ -210,7 +199,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     canvas.isDrawingMode =
       mode.isDraw && (drawTool.isBrush || drawTool.isEraser);
 
-    // Remove all mode-specific listeners
     canvas.off('mouse:down' as any);
     canvas.off('mouse:move' as any);
     canvas.off('mouse:up' as any);
@@ -239,14 +227,19 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         setupPolygonDrawing(
           canvas,
           pointsRef,
-          strokeColor,
           polygonRef,
           setCanvasToggle,
           updateUndoStateCallback,
+          {
+            guidance: true,
+            completeDistance: 10,
+            minDistance: 2,
+            strokeColor,
+            fillPolygon,
+          },
         );
       }
     } else if (mode.isPan) {
-      // TODO: Check [Performant Drag and Zoom using Fabric.js](https://medium.com/@Fjonan/performant-drag-and-zoom-using-fabric-js-3f320492f24b)
       canvas.hoverCursor = 'grab';
       canvas.selection = false;
       canvas.forEachObject(obj => {
@@ -306,9 +299,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         if (evt instanceof MouseEvent) {
           lastPosX = evt.clientX;
           lastPosY = evt.clientY;
-        } else if (evt instanceof TouchEvent) {
-          lastPosX = evt.touches[0].clientX;
-          lastPosY = evt.touches[0].clientY;
         }
         canvas.defaultCursor = 'grabbing';
         canvas.renderAll();
@@ -338,7 +328,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       canvas.on('mouse:move', handleMouseMove);
       canvas.on('mouse:up', handleMouseUp);
     } else {
-      // Set up selection mode
       canvas.selection = true;
       canvas.defaultCursor = 'default';
       canvas.hoverCursor = 'move';
@@ -359,6 +348,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     strokeWidth,
     updateUndoStateCallback,
     setCanvasToggle,
+    fillPolygon,
     fabricRef,
   ]);
 
@@ -404,6 +394,12 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
             tooltipText="Remove background"
           />
         </TooltipProvider>
+      </div>
+      <div className="absolute top-4 right-4 flex gap-2">
+        <label className="flex items-center gap-2">
+          <span className="text-black dark:text-white">Fill Polygon</span>
+          <Switch checked={fillPolygon} onCheckedChange={setFillPolygon} />
+        </label>
       </div>
     </div>
   );
