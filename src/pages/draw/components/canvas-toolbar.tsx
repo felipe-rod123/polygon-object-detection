@@ -13,6 +13,11 @@ import {
 import { Slider } from '@/components/ui/slider';
 import type { DrawClass } from '@/types/DrawClass';
 import type { ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
+import {
+  handleExportCOCO,
+  handleExportPNG,
+  handleExportSVG,
+} from '@/utils/exportHandlers';
 import { Canvas } from 'fabric';
 import {
   Brush,
@@ -25,11 +30,6 @@ import {
   X,
 } from 'lucide-react';
 import type React from 'react';
-import {
-  handleExportCOCO,
-  handleExportPNG,
-  handleExportSVG,
-} from '../../../utils/exportHandlers';
 import ToolSelectorToggleGroup from './canvas-tool-selector-toggle-group';
 
 interface ToolbarProps {
@@ -203,7 +203,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <Button
             className="w-full"
             variant="outline"
-            onClick={() => handleExportCOCO(fabricRef)}
+            onClick={() => handleExportCOCO(fabricRef, classes)}
           >
             <Download className="mr-2 h-4 w-4" /> Export COCO
           </Button>
