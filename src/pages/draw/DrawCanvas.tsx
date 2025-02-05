@@ -11,8 +11,10 @@ import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
 import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
 import { EraserBrush } from '@erase2d/fabric';
 import {
+  ActiveSelection,
   Canvas,
   type Circle,
+  FabricObject,
   PencilBrush,
   Point,
   type Polygon,
@@ -29,6 +31,54 @@ interface CanvasDrawingProps {
   strokeWidth: number;
   fabricRef: React.MutableRefObject<Canvas | null>;
 }
+
+let _clipboard: FabricObject | null = null;
+
+const deleteObject = (canvas: Canvas | null) => {
+  if (!canvas) return;
+
+  const activeObject = canvas?.getActiveObject();
+
+  if (!activeObject) return;
+  canvas.remove(activeObject);
+  canvas.requestRenderAll();
+};
+
+const copyObject = (canvas: Canvas | null) => {
+  if (!canvas) return;
+
+  const activeObject = canvas?.getActiveObject();
+
+  if (!activeObject) return;
+  activeObject.clone().then((cloned: FabricObject) => {
+    _clipboard = cloned;
+  });
+};
+
+const pasteObject = async (canvas: Canvas | null) => {
+  if (_clipboard && canvas) {
+    const clonedObj = await _clipboard.clone();
+    canvas.discardActiveObject();
+    clonedObj.set({
+      left: clonedObj.left + 10,
+      top: clonedObj.top + 10,
+      evented: true,
+    });
+    if (clonedObj instanceof ActiveSelection) {
+      clonedObj.canvas = canvas;
+      clonedObj.forEachObject(obj => {
+        canvas.add(obj);
+      });
+      clonedObj.setCoords();
+    } else {
+      canvas.add(clonedObj);
+    }
+    _clipboard.top += 10;
+    _clipboard.left += 10;
+    canvas.setActiveObject(clonedObj);
+    canvas.requestRenderAll();
+  }
+};
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
@@ -136,6 +186,37 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       canvas.dispose();
     };
   }, [updateUndoStateCallback, updateZoomCallback, fabricRef]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!fabricRef.current) return;
+
+      switch (event.key) {
+        case 'Delete':
+        case 'Backspace':
+          deleteObject(fabricRef.current);
+          break;
+        case 'c':
+          if (event.ctrlKey) {
+            copyObject(fabricRef.current);
+          }
+          break;
+        case 'v':
+          if (event.ctrlKey) {
+            pasteObject(fabricRef.current);
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [fabricRef]);
 
   useEffect(() => {
     const canvas = fabricRef.current;
