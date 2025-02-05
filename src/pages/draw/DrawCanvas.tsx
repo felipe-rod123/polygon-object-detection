@@ -1,6 +1,7 @@
 import TooltipToggleButton from '@/components/tooltip-toggle-button';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import ZoomControl from '@/components/zoom-control';
 import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { handleClear } from '@/utils/clearCanvasHandler';
@@ -14,7 +15,7 @@ import {
 import { setupPolygonDrawing } from '@/utils/polygonBuilder';
 import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
 import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
-import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
+import { handleZoom } from '@/utils/zoomHandler';
 import { EraserBrush } from '@erase2d/fabric';
 import {
   Canvas,
@@ -25,15 +26,8 @@ import {
   Rect,
   TEvent,
 } from 'fabric';
-import { Focus, Undo2, Video } from 'lucide-react';
+import { Focus, Undo2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-/**
- * Had to update the `node_modules/@erase2d/fabric/types/fabric.d.ts` file to include 3 extra props to my FabricObjects:
- * classColorName?: string;
- * objectCategory?: 'path' | 'polygon' | 'rectangle';
- * objectId?: string;
- */
 
 interface CanvasDrawingProps {
   canvasMode: ToolToggleEnum;
@@ -60,6 +54,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [canUndo, setCanUndo] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100);
   const polygonRef = useRef<Polygon | null>(null);
   const pointsRef = useRef<Circle[]>([]);
   const objectIdCounter = useRef(0);
@@ -72,7 +67,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   }, [fabricRef]);
 
   const updateZoomCallback = useCallback(() => {
-    handleZoom(fabricRef);
+    handleZoom(fabricRef, setZoomLevel);
   }, [fabricRef]);
 
   const handleClearCallback = useCallback(() => {
@@ -90,10 +85,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     );
   }, [fabricRef, mode, drawTool, updateUndoStateCallback]);
 
-  const handleResetZoomCallback = useCallback(() => {
-    handleResetZoom(fabricRef);
-  }, [fabricRef]);
-
   const handleResetPanCallback = useCallback(() => {
     if (fabricRef.current) {
       fabricRef.current.absolutePan(new Point(0, 0));
@@ -105,7 +96,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     if (!canvasRef.current || !containerRef.current) return;
 
     const canvas = new Canvas(canvasRef.current, {
-      backgroundColor: 'transparent', // dark mode compatible
+      backgroundColor: 'transparent',
       uniformScaling: true,
       uniScaleKey: 'shiftKey',
     });
@@ -143,15 +134,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
       path.objectId = `path-${objectIdCounter.current++}`;
       canvas.renderAll();
       updateUndoStateCallback();
-
-      // console.log(
-      //   'Path created with classColorName:',
-      //   selectedClass,
-      //   ', objectCategory:',
-      //   path.objectCategory,
-      //   ', objectId:',
-      //   path.objectId,
-      // );
     };
 
     canvas.on('path:created', handlePathCreated);
@@ -207,7 +189,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           }
         },
         Escape: () => {
-          // deselects all
           fabricRef.current?.discardActiveObject();
           fabricRef.current?.renderAll();
         },
@@ -398,6 +379,11 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
           ref={canvasRef}
           className="absolute top-0 left-0 w-full h-full"
         />
+        <ZoomControl
+          fabricRef={fabricRef}
+          zoomLevel={zoomLevel}
+          setZoomLevel={setZoomLevel}
+        />
       </div>
       <div className="absolute top-4 left-4 flex gap-2">
         <TooltipProvider>
@@ -407,13 +393,6 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
             <Undo2 className="h-4 w-4" />
             Undo
           </Button>
-
-          <TooltipToggleButton
-            keyValue="reset-zoom"
-            onClick={handleResetZoomCallback}
-            icon={<Video className="h-4 w-4 text-black dark:text-white" />}
-            tooltipText="Reset zoom"
-          />
 
           <TooltipToggleButton
             keyValue="reset-pan"

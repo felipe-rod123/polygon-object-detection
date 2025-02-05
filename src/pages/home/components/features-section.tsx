@@ -16,8 +16,7 @@ const features = [
   },
   {
     title: 'Intelligent Class Management',
-    description:
-      'Define and manage classes with unique color assignments.',
+    description: 'Define and manage classes with unique color assignments.',
     icon: <Palette className="h-8 w-8 text-zinc-700 dark:text-zinc-300" />,
   },
   {
