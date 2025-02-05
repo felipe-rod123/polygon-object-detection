@@ -5,16 +5,21 @@ import { DrawTool, type DrawToolsEnum } from '@/types/enums/DrawToolsEnum';
 import { ToolToggle, type ToolToggleEnum } from '@/types/enums/ToolToggleEnum';
 import { handleRemoveImageBackground } from '@/utils/backgroundImageHandler';
 import { handleClear } from '@/utils/clearCanvasHandler';
+import {
+  copyObject,
+  cutObject,
+  deleteObject,
+  duplicateObject,
+  pasteObject,
+} from '@/utils/keyboardShortcutHandlers';
 import { setupPolygonDrawing } from '@/utils/polygonBuilder';
 import { setupRectangleDrawing } from '@/utils/rectangleBuilder';
 import { handleUndo, updateUndoState } from '@/utils/undoActionHandler';
 import { handleResetZoom, handleZoom } from '@/utils/zoomHandler';
 import { EraserBrush } from '@erase2d/fabric';
 import {
-  ActiveSelection,
   Canvas,
   type Circle,
-  FabricObject,
   PencilBrush,
   Point,
   type Polygon,
@@ -31,91 +36,6 @@ interface CanvasDrawingProps {
   strokeWidth: number;
   fabricRef: React.MutableRefObject<Canvas | null>;
 }
-
-let _clipboard: FabricObject | null = null;
-
-const deleteObject = (canvas: Canvas | null) => {
-  if (!canvas) return;
-
-  const activeObject = canvas?.getActiveObject();
-
-  if (!activeObject) return;
-  canvas.remove(activeObject);
-  canvas.requestRenderAll();
-};
-
-const copyObject = (canvas: Canvas | null) => {
-  if (!canvas) return;
-
-  const activeObject = canvas?.getActiveObject();
-
-  if (!activeObject) return;
-  activeObject.clone().then((cloned: FabricObject) => {
-    _clipboard = cloned;
-  });
-};
-
-const pasteObject = async (canvas: Canvas | null) => {
-  if (_clipboard && canvas) {
-    const clonedObj = await _clipboard.clone();
-    canvas.discardActiveObject();
-    clonedObj.set({
-      left: clonedObj.left + 10,
-      top: clonedObj.top + 10,
-      evented: true,
-    });
-    if (clonedObj instanceof ActiveSelection) {
-      clonedObj.canvas = canvas;
-      clonedObj.forEachObject(obj => {
-        canvas.add(obj);
-      });
-      clonedObj.setCoords();
-    } else {
-      canvas.add(clonedObj);
-    }
-    _clipboard.top += 10;
-    _clipboard.left += 10;
-    canvas.setActiveObject(clonedObj);
-    canvas.requestRenderAll();
-  }
-};
-
-const cutObject = (canvas: Canvas | null) => {
-  if (!canvas) return;
-
-  const activeObject = canvas?.getActiveObject();
-
-  if (!activeObject) return;
-  activeObject.clone().then((cloned: FabricObject) => {
-    _clipboard = cloned;
-    deleteObject(canvas);
-  });
-};
-
-const duplicateObject = async (canvas: Canvas | null) => {
-  if (_clipboard && canvas) {
-    const clonedObj = await _clipboard.clone();
-    canvas.discardActiveObject();
-    clonedObj.set({
-      left: clonedObj.left + 10,
-      top: clonedObj.top + 10,
-      evented: true,
-    });
-    if (clonedObj instanceof ActiveSelection) {
-      clonedObj.canvas = canvas;
-      clonedObj.forEachObject(obj => {
-        canvas.add(obj);
-      });
-      clonedObj.setCoords();
-    } else {
-      canvas.add(clonedObj);
-    }
-    _clipboard.top += 10;
-    _clipboard.left += 10;
-    canvas.setActiveObject(clonedObj);
-    canvas.requestRenderAll();
-  }
-};
 
 const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
   canvasMode,
@@ -232,33 +152,39 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
         case 'Delete':
         case 'Backspace':
           deleteObject(fabricRef.current);
+          updateUndoStateCallback();
           break;
         case 'c':
           event.preventDefault();
-
           if (event.ctrlKey) {
             copyObject(fabricRef.current);
           }
           break;
         case 'v':
           event.preventDefault();
-
           if (event.ctrlKey) {
             pasteObject(fabricRef.current);
+            updateUndoStateCallback();
           }
           break;
         case 'x':
           event.preventDefault();
-
           if (event.ctrlKey) {
             cutObject(fabricRef.current);
+            updateUndoStateCallback();
           }
           break;
         case 'd':
-          event.preventDefault();
-
+          event.preventDefault(); // used to avoid browser default shortcut for this key. For example, on Chrome, this is used to save a bookmark, instead of duplicating the item.
           if (event.ctrlKey) {
             duplicateObject(fabricRef.current);
+            updateUndoStateCallback();
+          }
+          break;
+        case 'z':
+          event.preventDefault();
+          if (event.ctrlKey) {
+            handleUndoCallback();
           }
           break;
         default:
@@ -271,7 +197,7 @@ const CanvasDrawing: React.FC<CanvasDrawingProps> = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [fabricRef]);
+  }, [fabricRef, updateUndoStateCallback, handleUndoCallback]);
 
   useEffect(() => {
     const canvas = fabricRef.current;
