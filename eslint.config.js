@@ -1,3 +1,5 @@
+import path from 'path';
+
 export default [
   {
     // Flat config: ignore patterns
@@ -59,11 +61,18 @@ export default [
       'react/prop-types': 'off', // Disable prop-types as we use TypeScript
       'import/order': ['error', { 'newlines-between': 'always' }], // Enforce import order
       'import/no-unresolved': 'error', // Ensure imports point to a file/module that can be resolved
+      'import/no-relative-parent-imports': 'error', // Disallow relative parent imports
     },
 
     settings: {
       react: {
         version: 'detect', // Automatically detect the React version
+      },
+      'import/resolver': {
+        alias: {
+          map: [['@', path.resolve(__dirname, 'src')]],
+          extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        },
       },
     },
   },

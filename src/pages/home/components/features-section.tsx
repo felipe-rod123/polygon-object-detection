@@ -5,19 +5,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../components/ui/card';
+} from '@/components/ui/card';
 
 const features = [
   {
     title: 'Advanced Annotation',
     description:
-      'Seamlessly switch between brush and polygon modes for unparalleled precision.',
+      'Seamlessly switch between brush, rectangle and polygon modes for unparalleled precision.',
     icon: <Brush className="h-8 w-8 text-zinc-700 dark:text-zinc-300" />,
   },
   {
     title: 'Intelligent Class Management',
-    description:
-      'Define and manage classes with unique color assignments, ensuring zero overlap.',
+    description: 'Define and manage classes with unique color assignments.',
     icon: <Palette className="h-8 w-8 text-zinc-700 dark:text-zinc-300" />,
   },
   {
@@ -50,7 +49,7 @@ const Features: React.FC = () => {
   return (
     <section
       id="features"
-      className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-zinc-900"
+      className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-neutral-900"
     >
       <div className="container mx-auto">
         <h2 className="text-4xl font-bold text-center mb-16 text-zinc-900 dark:text-zinc-100">

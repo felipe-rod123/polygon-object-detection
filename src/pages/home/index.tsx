@@ -1,9 +1,9 @@
 import '../../index.css';
-import Features from './Features';
-import Footer from './Footer';
-import GithubSection from './GithubSection';
-import Header from './Header';
-import Hero from './Hero';
+import Features from './components/features-section';
+import Footer from './components/footer';
+import GithubSection from './components/github-section';
+import Header from './components/header';
+import Hero from './components/hero-section';
 
 export default function HomePage() {
   return (
