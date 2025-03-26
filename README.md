@@ -1,4 +1,4 @@
-# frontend-overview-case
+# polygon-object-detection
 
 Felipe Rodrigues' front-end take-home test.
 
